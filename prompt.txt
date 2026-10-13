@@ -1,0 +1,109 @@
+
+I am creating a new project in nextjs,tailwind, mongodb.
+
+
+
+I’ll also assume: one driver = one login (simple password gate, since it’s real financial data on the open web), and that “a month” is identified as a string like "2026-10".
+
+Data model (3 collections)
+
+Passengers
+
+{
+  name, phone,              // phone with country code: "9715XXXXXXXX"
+  pickupArea, dropArea, route, seatNumber,
+  billingType,              // "monthly" | "perTrip"
+  monthlyFee,               // used when monthly
+  perTripFee,               // used when perTrip
+  joinDate,                 // drives pro-rating
+  status,                   // "active" | "inactive"
+  createdAt, updatedAt
+}
+
+Payments — one record per payment, never overwrite
+
+{
+  passengerId,              // ref -> Passengers
+  amount,
+  date,
+  method,                   // "cash" | "transfer" | "wallet"
+  forMonth,                 // "2026-10" — which month this money covers
+  note,
+  createdAt
+}
+
+Trips (attendance)
+
+{
+  passengerId,              // ref -> Passengers
+  date,                     // one doc per passenger per day
+  status                    // "travelled" | "absent"
+}
+
+The key design decision here: don’t store a “paid/unpaid” flag on the passenger. Compute status from the sum of payments. This makes partial and advance payments fall out naturally — an advance is just a payment with a future forMonth, a partial is a payment smaller than what’s expected. Nothing special to code.
+
+The two bits of logic where bugs hide
+
+Get these right and the rest is plumbing.
+
+1. “What is owed for passenger X in month M”
+
+if billingType == "monthly":
+    if M is their join month:  expected = proRated(monthlyFee, joinDate)
+    else:                      expected = monthlyFee
+if billingType == "perTrip":
+    expected = (count of "travelled" trips in M) * perTripFee
+
+paid    = sum of payment.amount where passengerId == X and forMonth == M
+balance = expected - paid
+
+status: paid if balance <= 0, pending if paid == 0, partial otherwise, overdue if pending/partial past due date
+
+2. Pro-rating
+
+proRated = round( monthlyFee * (remainingDays / totalDaysInMonth) )
+
+You need to decide remainingDays: calendar days (joined on the 20th of a 31-day month → 12/31 of the fee) is simplest, or working days (exclude the driver’s off-days) which is fairer but needs a schedule. I’d start with calendar days and switch later only if passengers push back.
+
+API endpoints
+Passengers:  GET /passengers · POST /passengers · GET /passengers/:id · PUT /passengers/:id · PUT /passengers/:id/deactivate
+Payments:    GET /payments?month= · POST /payments · DELETE /payments/:id
+Trips:       GET /trips?date=  · POST /trips (bulk-mark a day) · PUT /trips/:id
+Reports:     GET /status?month=     -> every active passenger with expected/paid/balance/status
+             GET /dashboard?month=  -> totals (collected, expected, overdue count)
+Frontend pages
+Dashboard — collected this month, still expected, overdue count. The glance screen.
+Passengers — list + add/edit form (billing type switches which fee field shows).
+Payments — month picker, table of every passenger colour-coded by status, “log payment” button per row.
+Attendance — pick a date, mark everyone travelled/absent in one grid. Feeds per-trip billing.
+Passenger detail — full ledger: every payment and trip, running balance.
+
+Shared components: StatusBadge, MonthPicker, PaymentModal, PassengerForm, AttendanceGrid.
+
+WhatsApp reminders
+
+For a single driver, skip any paid API. Use wa.me deep links — free, no setup:
+
+https://wa.me/9715XXXXXXXX?text=<url-encoded message with name, month, balance>
+
+One tap opens WhatsApp with the message pre-filled; he hits send. Add a “Remind” button next to every pending/overdue passenger. (Fully automated sending needs the WhatsApp Business API or Twilio — paid and needs approval; leave it as a later upgrade.)
+
+Build order
+
+Phase 0 — Setup. Repos, Express + Mongoose + Mongo connection, React + Tailwind + routing, simple login gate. Get a “hello” request flowing end to end.
+
+Phase 1 — Passengers. Full CRUD + the directory page. Everything else references this, so finish it first.
+
+Phase 2 — Payments (flat monthly only). Log payments, the monthly status table with colour badges, and the passenger ledger. Use flat monthlyFee for now — ignore pro-rating and per-trip.
+
+Phase 3 — Dashboard. The aggregation endpoint + the glance screen. Now it’s demoable and genuinely useful.
+
+Phase 4 — Attendance + per-trip billing. Trips collection, the daily grid, and the per-trip branch of the “expected” logic.
+
+Phase 5 — Pro-rating. Add the join-month calculation to the “expected” logic. Small change, isolated to one function.
+
+Phase 6 — WhatsApp. Remind buttons with wa.me links.
+
+Phase 7 — Polish. Receipts (screenshot/export), deploy (Vercel for frontend, Render/Railway for backend, Mongo Atlas for DB), optional Arabic toggle.
+
+Each phase is independently shippable — you can stop after Phase 3 and already have something worth using daily.
