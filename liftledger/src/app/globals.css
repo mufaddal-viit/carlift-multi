@@ -40,3 +40,49 @@
 html[lang="ar"] { --font-sans: var(--font-readex), var(--font-urbanist), system-ui, sans-serif; }
 body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); }
 .tabular { font-variant-numeric: tabular-nums; }
+
+/* Illustration movement. Runs only when the device allows motion. */
+@keyframes ill-bob { 50% { transform: translateY(-2.5px); } }
+@keyframes ill-spin { to { transform: rotate(360deg); } }
+@keyframes ill-slide { to { transform: translateX(-44px); } }
+@keyframes ill-speed { 0% { opacity: 0; transform: translateX(14px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateX(-10px); } }
+@keyframes ill-dash { to { stroke-dashoffset: -48; } }
+@keyframes ill-pop { 0% { opacity: 0; transform: scale(0.6); } 60% { transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ill-pulse { 50% { opacity: 0.45; transform: scale(1.12); } }
+@keyframes ill-drop { 0% { opacity: 0; transform: translateY(-26px); } 30% { opacity: 1; } 70%, 100% { opacity: 0; transform: translateY(40px); } }
+@keyframes ill-blink { 0%, 60%, 100% { opacity: 0.35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+@keyframes ill-unroll { from { transform: scaleY(0.15); } to { transform: scaleY(1); } }
+@keyframes ill-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ill-lane { to { transform: translateY(20px); opacity: 0.2; } }
+@keyframes sheen { 0% { transform: translateX(-120%) skewX(-18deg); } 55%, 100% { transform: translateX(320%) skewX(-18deg); } }
+
+.ill .ill-pop, .ill .ill-pulse { transform-box: fill-box; transform-origin: center; }
+.ill .ill-draw { stroke-dasharray: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ill-on .ill-bob { animation: ill-bob 1.6s ease-in-out infinite; }
+  .ill-on .ill-wheel { animation: ill-spin 1.1s linear infinite; }
+  .ill-on .ill-road { animation: ill-slide 0.9s linear infinite; }
+  .ill-on .ill-speed path { animation: ill-speed 1.2s ease-out infinite; }
+  .ill-on .ill-speed path:nth-child(2) { animation-delay: 0.2s; }
+  .ill-on .ill-speed path:nth-child(3) { animation-delay: 0.4s; }
+  .ill-on .ill-dash { animation: ill-dash 1.4s linear infinite; }
+  .ill-on .ill-pop { animation: ill-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ill-on .ill-pop.ill-late { animation-delay: 0.35s; }
+  .ill-on .ill-pulse { animation: ill-pulse 2.4s ease-in-out infinite; }
+  .ill-on .ill-drop { animation: ill-drop 2.2s cubic-bezier(0.5, 0, 0.8, 0.6) infinite; }
+  .ill-on .ill-blink { transform-box: fill-box; animation: ill-blink 1.3s ease-in-out infinite; }
+  .ill-on .ill-blink.ill-b2 { animation-delay: 0.15s; }
+  .ill-on .ill-blink.ill-b3 { animation-delay: 0.3s; }
+  .ill-on .ill-unroll { animation: ill-unroll 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ill-on .ill-draw { animation: ill-draw 0.8s 0.3s ease-out both; }
+  .ill-on .ill-lane { animation: ill-lane 0.8s linear infinite; }
+  .sheen::after { animation: sheen 4.5s ease-in-out infinite; }
+}
+
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 35%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent);
+  transform: translateX(-120%) skewX(-18deg); pointer-events: none;
+}
