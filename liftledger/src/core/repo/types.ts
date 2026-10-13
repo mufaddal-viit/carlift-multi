@@ -97,3 +97,68 @@ export interface Trip {
   date: string;
   status: 'travelled' | 'absent';
 }
+
+export interface Db {
+  version: number;
+  seedMonth: string;
+  plans: Plan[];
+  companies: Company[];
+  users: User[];
+  cars: Car[];
+  drivers: Driver[];
+  passengers: Passenger[];
+  payments: Payment[];
+  trips: Trip[];
+}
+
+export interface Session {
+  userId: string;
+  role: Role;
+  companyId: string | null;
+  name: string;
+  locale: Locale;
+}
+
+export interface StatusRow {
+  passenger: Passenger;
+  car: Car | null;
+  driver: Driver | null;
+  ledger: import('../billing/engine').Ledger;
+}
+
+export interface DashboardData {
+  summary: import('../billing/summary').CompanySummary;
+  rows: StatusRow[];
+  recentPayments: (Payment & { passengerName: string })[];
+  cars: (Car & { driver: Driver | null; riders: number })[];
+}
+
+export type PassengerInput = Pick<
+  Passenger,
+  'carId' | 'name' | 'phone' | 'pickupArea' | 'dropArea' | 'seatNumber' | 'billingType' | 'monthlyFee' | 'perTripFee' | 'joinDate'
+>;
+
+export type PaymentInput = Pick<Payment, 'passengerId' | 'amount' | 'date' | 'method' | 'forMonth' | 'note'>;
+
+export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email'>;
+
+export interface Repository {
+  login(identifier: string, password: string): Promise<Session>;
+  loginAs(userId: string): Promise<Session>;
+  demoUsers(): Promise<DemoUser[]>;
+  company(s: Session): Promise<Company>;
+  cars(s: Session): Promise<Car[]>;
+  drivers(s: Session): Promise<Driver[]>;
+  passengers(s: Session): Promise<Passenger[]>;
+  passenger(s: Session, id: string): Promise<Passenger>;
+  savePassenger(s: Session, input: PassengerInput, id?: string): Promise<Passenger>;
+  deactivatePassenger(s: Session, id: string): Promise<Passenger>;
+  payments(s: Session, month?: string): Promise<Payment[]>;
+  logPayment(s: Session, input: PaymentInput): Promise<Payment>;
+  deletePayment(s: Session, id: string): Promise<void>;
+  trips(s: Session, date: string): Promise<Trip[]>;
+  markTrips(s: Session, date: string, marks: { passengerId: string; status: Trip['status'] }[]): Promise<Trip[]>;
+  statusBoard(s: Session, month: string): Promise<StatusRow[]>;
+  dashboard(s: Session, month: string): Promise<DashboardData>;
+  reset(): Promise<void>;
+}
