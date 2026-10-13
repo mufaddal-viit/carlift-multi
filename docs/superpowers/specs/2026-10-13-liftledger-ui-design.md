@@ -198,7 +198,7 @@ Rules:
 - Pro-rating uses calendar days, counting the join day: `round(monthlyFee × remainingDays / daysInMonth)`. Joining on the 20th of a 31-day month gives 12/31.
 - `paid` = sum of payments whose `forMonth` equals the month. An advance is simply a payment with a future `forMonth`.
 - `balance = expected − paid`.
-- Status: `paid` if `expected > 0` and `balance ≤ 0`; otherwise `pending` if `paid = 0`, else `partial`; `pending` or `partial` becomes `overdue` once `today` is after the company's `dueDay` in that month (or the month has ended). A passenger with `expected = 0` shows as `paid` with a "nothing due" note.
+- Status: `paid` if `expected > 0` and `balance ≤ 0`; otherwise `pending` if `paid = 0`, else `partial`; `pending` or `partial` becomes `overdue` once `today` is after the company's `dueDay` in that month (or the month has ended). Per-trip passengers are billed on what they travelled, so they become `overdue` only after the month has ended. A passenger with `expected = 0` shows as `paid` with a "nothing due" note.
 - Overpayment in a month is not carried forward automatically; it shows as a negative balance labelled "credit". Carrying it forward is done by logging the payment against the next month.
 - All amounts are whole AED.
 
