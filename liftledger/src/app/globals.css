@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #F1F2F4; --card: #FFFFFF; --soft: #F6F7F8;
+  --ink: #0E1512; --ink-muted: #8A9390; --line: #E8EAEC;
+  --brand: #0F8A5F; --brand-deep: #0B6B49; --brand-tint: #DDF3E9; --on-brand: #FFFFFF;
+  --paid: #0F8A5F; --paid-bg: #DDF3E9;
+  --partial: #9A6500; --partial-bg: #FBF0D8;
+  --overdue: #B3261E; --overdue-bg: #FCE7E7;
+  --pending: #5B6675; --pending-bg: #EDF1F6;
+  --card-shadow: 0 1px 2px rgb(14 21 18 / 0.04), 0 8px 24px rgb(14 21 18 / 0.04);
+}
+.dark {
+  --canvas: #0B1210; --card: #121A17; --soft: #18221E;
+  --ink: #ECF2EF; --ink-muted: #7E8C86; --line: #1F2B26;
+  --brand: #3DDC97; --brand-deep: #2BB57A; --brand-tint: #123A2B; --on-brand: #05221D;
+  --paid: #3DDC97; --paid-bg: #123A2B;
+  --partial: #FBBF4D; --partial-bg: #322710;
+  --overdue: #F2756F; --overdue-bg: #361C1C;
+  --pending: #A3AEBD; --pending-bg: #1E252E;
+  --card-shadow: 0 0 0 1px var(--line);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas); --color-card: var(--card); --color-soft: var(--soft);
+  --color-ink: var(--ink); --color-ink-muted: var(--ink-muted); --color-line: var(--line);
+  --color-brand: var(--brand); --color-brand-deep: var(--brand-deep);
+  --color-brand-tint: var(--brand-tint); --color-on-brand: var(--on-brand);
+  --color-paid: var(--paid); --color-paid-bg: var(--paid-bg);
+  --color-partial: var(--partial); --color-partial-bg: var(--partial-bg);
+  --color-overdue: var(--overdue); --color-overdue-bg: var(--overdue-bg);
+  --color-pending: var(--pending); --color-pending-bg: var(--pending-bg);
+  --radius-card: 28px; --radius-inner: 16px;
+  --shadow-card: var(--card-shadow);
+  --font-sans: var(--font-urbanist), var(--font-readex), system-ui, sans-serif;
+}
+
+html[lang="ar"] { --font-sans: var(--font-readex), var(--font-urbanist), system-ui, sans-serif; }
+body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); }
+.tabular { font-variant-numeric: tabular-nums; }
