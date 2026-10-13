@@ -184,7 +184,9 @@ export function buildSeed(today: string): Db {
     for (let m = firstMonth; m < month; m = addMonths(m, 1)) {
       if (r.inactive && m === lastMonth) continue;
       const expected = expectedFor(p, m, trips);
-      const amount = r.habit === 'late' && m === lastMonth ? Math.round(expected / 100) * 50 : expected;
+      // Most months are paid in full; now and then a rider settles only part, which gives the history some texture.
+      const short = (r.habit === 'late' && m === lastMonth) || (!r.perTrip && rnd() < 0.14);
+      const amount = short ? Math.round(expected / 100) * 50 : expected;
       addPayment(p, amount, `${m}-${pad(1 + Math.floor(rnd() * 6))}`, m, by);
     }
     if (r.inactive) return;

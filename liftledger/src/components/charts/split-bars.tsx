@@ -12,6 +12,8 @@ export interface SplitItem {
   /** Text at the end of the row, for example "48%" or "4 of 14 seats". */
   detail: string;
   tone?: keyof typeof tones;
+  /** What a full bar means for this row, when rows have different capacities. */
+  of?: number;
 }
 
 /** Labelled horizontal bars. `max` defaults to the sum, which makes each bar a share of the whole. */
@@ -22,7 +24,8 @@ export function SplitBars({ items, max, className }: { items: SplitItem[]; max?:
   return (
     <ul className={cn('flex flex-col gap-4', className)}>
       {items.map((item, i) => {
-        const pct = total === 0 ? 0 : Math.min(100, (item.value / total) * 100);
+        const whole = item.of ?? total;
+        const pct = whole === 0 ? 0 : Math.min(100, (item.value / whole) * 100);
         return (
           <li key={item.label}>
             <div className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
