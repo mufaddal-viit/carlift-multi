@@ -1,7 +1,7 @@
 import { addMonths, daysInMonth, expectedFor, monthOf } from '../billing';
 import type { Car, Company, Db, Driver, Passenger, PayMethod, Payment, Plan, Trip, User } from './types';
 
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 export const DEMO_COMPANY_ID = 'co-majra';
 export const DEMO_PASSWORD = 'demo1234';
 
@@ -28,6 +28,7 @@ type Habit = 'full' | 'partial' | 'none' | 'advance' | 'late';
 
 interface Row {
   name: string;
+  employer: string;
   pickup: string;
   drop: string;
   car: 1 | 2 | 3;
@@ -39,31 +40,33 @@ interface Row {
 }
 
 // monthsAgo 0 means "joined a few days ago", which exercises pro-rating.
+const EMPLOYERS = ['Emirates Steel', 'Al Futtaim Group', 'DEWA', 'Emaar Properties', 'Dubai Holdings', 'Jumeirah Group', 'Majid Al Futtaim', 'Etisalat', 'ENOC', 'Nakheel', 'DP World', 'Damac Properties'];
+
 const ROSTER: Row[] = [
-  { name: 'Priya Nair', pickup: 'Karama', drop: 'JLT', car: 1, fee: 380, habit: 'advance', monthsAgo: 14 },
-  { name: 'Rahul Menon', pickup: 'Al Nahda', drop: 'Business Bay', car: 1, fee: 350, habit: 'full', monthsAgo: 11 },
-  { name: 'Ayesha Khan', pickup: 'Al Qusais', drop: 'DIFC', car: 1, fee: 400, habit: 'partial', monthsAgo: 9 },
-  { name: 'Lina Haddad', pickup: 'Jumeirah', drop: 'DIFC', car: 1, fee: 500, habit: 'full', monthsAgo: 8 },
-  { name: 'Omar Farouk', pickup: 'Al Nahda', drop: 'Downtown', car: 1, fee: 360, habit: 'full', monthsAgo: 7 },
-  { name: 'Grace Fernandes', pickup: 'Karama', drop: 'Business Bay', car: 1, fee: 340, habit: 'late', monthsAgo: 6 },
-  { name: 'Imran Sheikh', pickup: 'Al Qusais', drop: 'Downtown', car: 1, fee: 370, habit: 'full', monthsAgo: 4 },
-  { name: 'Neha Kapoor', pickup: 'Oud Metha', drop: 'JLT', car: 1, fee: 390, habit: 'full', monthsAgo: 3 },
-  { name: 'Mohammed Siddiqui', pickup: 'Deira', drop: 'Media City', car: 2, fee: 350, habit: 'none', monthsAgo: 12 },
-  { name: 'Sara Abdullah', pickup: 'JVC', drop: 'Internet City', car: 2, fee: 420, habit: 'full', monthsAgo: 10 },
-  { name: 'Fatima Ali', pickup: 'Al Nahda', drop: 'Downtown', car: 2, fee: 350, habit: 'full', monthsAgo: 0 },
-  { name: 'Daniel Cruz', pickup: 'Deira', drop: 'Internet City', car: 2, fee: 380, habit: 'full', monthsAgo: 8 },
-  { name: 'Hessa Al Marri', pickup: 'Mirdif', drop: 'Media City', car: 2, fee: 450, habit: 'partial', monthsAgo: 6 },
-  { name: 'Arjun Pillai', pickup: 'Al Barsha', drop: 'Media City', car: 2, fee: 300, habit: 'full', monthsAgo: 5 },
-  { name: 'Maryam Yousuf', pickup: 'Deira', drop: 'Marina', car: 2, fee: 410, habit: 'full', monthsAgo: 2 },
-  { name: 'Kevin Thomas', pickup: 'JVC', drop: 'Marina', car: 2, fee: 30, habit: 'none', monthsAgo: 5, perTrip: true },
-  { name: 'Suresh Kumar', pickup: 'Sharjah Taawun', drop: 'Al Barsha', car: 3, fee: 450, habit: 'full', monthsAgo: 13 },
-  { name: "John D'Souza", pickup: 'Mirdif', drop: 'Festival City', car: 3, fee: 25, habit: 'partial', monthsAgo: 6, perTrip: true },
-  { name: 'Vikram Shah', pickup: 'Al Warqa', drop: 'Silicon Oasis', car: 3, fee: 400, habit: 'none', monthsAgo: 9 },
-  { name: 'Reem Hassan', pickup: 'Sharjah Taawun', drop: 'Silicon Oasis', car: 3, fee: 460, habit: 'full', monthsAgo: 7 },
-  { name: 'Anil George', pickup: 'Al Warqa', drop: 'Festival City', car: 3, fee: 330, habit: 'full', monthsAgo: 5 },
-  { name: 'Zainab Hussain', pickup: 'Muhaisnah', drop: 'Al Barsha', car: 3, fee: 440, habit: 'late', monthsAgo: 4 },
-  { name: 'Carlos Reyes', pickup: 'Mirdif', drop: 'Silicon Oasis', car: 3, fee: 390, habit: 'full', monthsAgo: 3 },
-  { name: 'Tariq Mansoor', pickup: 'Muhaisnah', drop: 'Festival City', car: 3, fee: 360, habit: 'none', monthsAgo: 5, inactive: true },
+  { name: 'Priya Nair', employer: 'Emirates Steel', pickup: 'Karama', drop: 'JLT', car: 1, fee: 380, habit: 'advance', monthsAgo: 14 },
+  { name: 'Rahul Menon', employer: 'Al Futtaim Group', pickup: 'Al Nahda', drop: 'Business Bay', car: 1, fee: 350, habit: 'full', monthsAgo: 11 },
+  { name: 'Ayesha Khan', employer: 'DEWA', pickup: 'Al Qusais', drop: 'DIFC', car: 1, fee: 400, habit: 'partial', monthsAgo: 9 },
+  { name: 'Lina Haddad', employer: 'Emaar Properties', pickup: 'Jumeirah', drop: 'DIFC', car: 1, fee: 500, habit: 'full', monthsAgo: 8 },
+  { name: 'Omar Farouk', employer: 'Dubai Holdings', pickup: 'Al Nahda', drop: 'Downtown', car: 1, fee: 360, habit: 'full', monthsAgo: 7 },
+  { name: 'Grace Fernandes', employer: 'Jumeirah Group', pickup: 'Karama', drop: 'Business Bay', car: 1, fee: 340, habit: 'late', monthsAgo: 6 },
+  { name: 'Imran Sheikh', employer: 'Majid Al Futtaim', pickup: 'Al Qusais', drop: 'Downtown', car: 1, fee: 370, habit: 'full', monthsAgo: 4 },
+  { name: 'Neha Kapoor', employer: 'Etisalat', pickup: 'Oud Metha', drop: 'JLT', car: 1, fee: 390, habit: 'full', monthsAgo: 3 },
+  { name: 'Mohammed Siddiqui', employer: 'ENOC', pickup: 'Deira', drop: 'Media City', car: 2, fee: 350, habit: 'none', monthsAgo: 12 },
+  { name: 'Sara Abdullah', employer: 'Nakheel', pickup: 'JVC', drop: 'Internet City', car: 2, fee: 420, habit: 'full', monthsAgo: 10 },
+  { name: 'Fatima Ali', employer: 'DP World', pickup: 'Al Nahda', drop: 'Downtown', car: 2, fee: 350, habit: 'full', monthsAgo: 0 },
+  { name: 'Daniel Cruz', employer: 'Damac Properties', pickup: 'Deira', drop: 'Internet City', car: 2, fee: 380, habit: 'full', monthsAgo: 8 },
+  { name: 'Hessa Al Marri', employer: 'Emirates Steel', pickup: 'Mirdif', drop: 'Media City', car: 2, fee: 450, habit: 'partial', monthsAgo: 6 },
+  { name: 'Arjun Pillai', employer: 'Al Futtaim Group', pickup: 'Al Barsha', drop: 'Media City', car: 2, fee: 300, habit: 'full', monthsAgo: 5 },
+  { name: 'Maryam Yousuf', employer: 'DEWA', pickup: 'Deira', drop: 'Marina', car: 2, fee: 410, habit: 'full', monthsAgo: 2 },
+  { name: 'Kevin Thomas', employer: 'Emaar Properties', pickup: 'JVC', drop: 'Marina', car: 2, fee: 30, habit: 'none', monthsAgo: 5, perTrip: true },
+  { name: 'Suresh Kumar', employer: 'Dubai Holdings', pickup: 'Sharjah Taawun', drop: 'Al Barsha', car: 3, fee: 450, habit: 'full', monthsAgo: 13 },
+  { name: "John D'Souza", employer: 'Jumeirah Group', pickup: 'Mirdif', drop: 'Festival City', car: 3, fee: 25, habit: 'partial', monthsAgo: 6, perTrip: true },
+  { name: 'Vikram Shah', employer: 'Majid Al Futtaim', pickup: 'Al Warqa', drop: 'Silicon Oasis', car: 3, fee: 400, habit: 'none', monthsAgo: 9 },
+  { name: 'Reem Hassan', employer: 'Etisalat', pickup: 'Sharjah Taawun', drop: 'Silicon Oasis', car: 3, fee: 460, habit: 'full', monthsAgo: 7 },
+  { name: 'Anil George', employer: 'ENOC', pickup: 'Al Warqa', drop: 'Festival City', car: 3, fee: 330, habit: 'full', monthsAgo: 5 },
+  { name: 'Zainab Hussain', employer: 'Nakheel', pickup: 'Muhaisnah', drop: 'Al Barsha', car: 3, fee: 440, habit: 'late', monthsAgo: 4 },
+  { name: 'Carlos Reyes', employer: 'DP World', pickup: 'Mirdif', drop: 'Silicon Oasis', car: 3, fee: 390, habit: 'full', monthsAgo: 3 },
+  { name: 'Tariq Mansoor', employer: 'Damac Properties', pickup: 'Muhaisnah', drop: 'Festival City', car: 3, fee: 360, habit: 'none', monthsAgo: 5, inactive: true },
 ];
 
 const PLANS: Plan[] = [
@@ -152,6 +155,7 @@ export function buildSeed(today: string): Db {
     seats[r.car] += 1;
     passengers.push({
       id: `pax-majra-${i + 1}`, companyId: DEMO_COMPANY_ID, carId: `car-majra-${r.car}`, name: r.name,
+      employerName: r.employer,
       phone: `9715${String(4410000 + i * 13711).padStart(8, '0')}`,
       pickupArea: r.pickup, dropArea: r.drop, route: `${r.pickup} → ${r.drop}`, seatNumber: seats[r.car],
       billingType: r.perTrip ? 'perTrip' : 'monthly', monthlyFee: r.perTrip ? 0 : r.fee, perTripFee: r.perTrip ? r.fee : 0,
@@ -224,6 +228,7 @@ export function buildSeed(today: string): Db {
       const joinDate = `${addMonths(month, -(1 + (n % 3)))}-${pad(1 + ((n * 5) % 27))}`;
       const p: Passenger = {
         id: `pax-${short}-${n}`, companyId: c.id, carId: `car-${short}-${1 + (n % c.cars)}`, name: `${pick(FIRST)} ${pick(LAST)}`,
+        employerName: pick(EMPLOYERS),
         phone: `9715${String(5500000 + ci * 100000 + n * 811).padStart(8, '0')}`, pickupArea: pickup, dropArea: drop,
         route: `${pickup} → ${drop}`, seatNumber: n, billingType: 'monthly', monthlyFee: 300 + n * 20, perTripFee: 0,
         joinDate, status: 'active', createdAt: joinDate, updatedAt: joinDate,

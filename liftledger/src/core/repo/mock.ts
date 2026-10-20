@@ -2,9 +2,9 @@ import { companySummary, monthOf, statusFor } from '../billing';
 import { todayInDubai } from '../clock';
 import { buildSeed, DB_VERSION } from './seed';
 import { canWrite, visibleCars, visiblePassengers, type WriteAction } from './scope';
-import type { Db, Passenger, Repository, Session, StatusRow, Trip, User } from './types';
+import type { Db, Passenger, RegistrationInput, Repository, Session, StatusRow, Trip, User } from './types';
 
-export const STORAGE_KEY = 'liftledger.db.v1';
+export const STORAGE_KEY = 'liftledger.db.v2';
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
@@ -151,8 +151,12 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
       const d = db();
       const car = visibleCars(s, d).find((c) => c.id === input.carId);
       if (!car) throw fail('not-found');
+      // Duplicate phone check within the same company
+      const phone = input.phone.replace(/\D/g, '');
+      const dup = d.passengers.find((p) => p.phone === phone && p.companyId === car.companyId && p.id !== id);
+      if (dup) throw new Error('duplicate-phone');
       const now = today();
-      const fields = { ...input, route: `${input.pickupArea} → ${input.dropArea}`, updatedAt: now };
+      const fields = { ...input, phone, route: `${input.pickupArea} → ${input.dropArea}`, updatedAt: now };
       if (id) {
         const existing = seen(s, id);
         allow(s, 'passenger', existing);
@@ -264,6 +268,40 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
           riders: rows.filter((r) => r.passenger.carId === car.id).length,
         })),
       };
+    },
+
+    async companyById(companyId) {
+      await wait();
+      const c = db().companies.find((x) => x.id === companyId);
+      return c ? { id: c.id, name: c.name, phone: c.phone } : null;
+    },
+
+    async registerPassenger(companyId, input) {
+      await wait();
+      const d = db();
+      const company = d.companies.find((c) => c.id === companyId && c.status !== 'suspended');
+      if (!company) throw fail('not-found');
+      const phone = input.phone.replace(/\D/g, '');
+      if (!/^971\d{9}$/.test(phone)) throw new Error('invalid-phone');
+      const dup = d.passengers.find((p) => p.phone === phone && p.companyId === companyId);
+      if (dup) throw new Error('duplicate-phone');
+      // Assign to the first active car with capacity
+      const activeCars = d.cars.filter((c) => c.companyId === companyId && c.status === 'active');
+      if (activeCars.length === 0) throw fail('not-found');
+      const carCounts = new Map(activeCars.map((c) => [c.id, 0]));
+      for (const p of d.passengers) if (p.companyId === companyId && p.status === 'active' && carCounts.has(p.carId)) carCounts.set(p.carId, (carCounts.get(p.carId) ?? 0) + 1);
+      const bestCar = activeCars.reduce((a, b) => ((carCounts.get(a.id) ?? 0) <= (carCounts.get(b.id) ?? 0) ? a : b));
+      const seatNumber = (carCounts.get(bestCar.id) ?? 0) + 1;
+      const now = today();
+      const passenger: Passenger = {
+        id: crypto.randomUUID(), companyId, carId: bestCar.id, name: input.name, employerName: input.employerName,
+        phone, pickupArea: input.pickupArea, dropArea: input.dropArea, route: `${input.pickupArea} → ${input.dropArea}`,
+        seatNumber, billingType: 'monthly', monthlyFee: 0, perTripFee: 0, joinDate: now,
+        status: 'active', createdAt: now, updatedAt: now,
+      };
+      d.passengers.push(passenger);
+      save();
+      return passenger;
     },
 
     async reset() {

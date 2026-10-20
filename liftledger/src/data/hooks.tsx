@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { PaymentInput, Repository, Session, Trip } from '@/core/repo/types';
+import type { PaymentInput, RegistrationInput, Repository, Session, Trip } from '@/core/repo/types';
 
 const RepoContext = createContext<Repository | null>(null);
 const SessionContext = createContext<Session | null>(null);
@@ -90,4 +90,40 @@ export function useMarkTrips() {
       repo.markTrips(s, v.date, v.marks),
     onSuccess: invalidate,
   });
+}
+
+export function usePassenger(id: string) {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['passenger', s.userId, id], queryFn: () => repo.passenger(s, id) });
+}
+
+export function usePassengerPayments(month?: string) {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['payments', s.userId, month], queryFn: () => repo.payments(s, month) });
+}
+
+export function useDrivers() {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['drivers', s.userId], queryFn: () => repo.drivers(s) });
+}
+
+export function useDeactivatePassenger() {
+  const repo = useRepo();
+  const s = useSession();
+  const invalidate = useInvalidateLive();
+  return useMutation({ mutationFn: (id: string) => repo.deactivatePassenger(s, id), onSuccess: invalidate });
+}
+
+// Public hooks (no session required)
+export function useCompanyById(companyId: string) {
+  const repo = useRepo();
+  return useQuery({ queryKey: ['companyById', companyId], queryFn: () => repo.companyById(companyId), enabled: !!companyId });
+}
+
+export function useRegisterPassenger() {
+  const repo = useRepo();
+  return useMutation({ mutationFn: (v: { companyId: string; input: RegistrationInput }) => repo.registerPassenger(v.companyId, v.input) });
 }

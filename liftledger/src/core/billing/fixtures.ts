@@ -1,7 +1,7 @@
 import type { Passenger, Payment, Trip } from '../repo/types';
 
 export const pax = (o: Partial<Passenger> = {}): Passenger => ({
-  id: 'p1', companyId: 'c1', carId: 'car1', name: 'A', phone: '971500000000',
+  id: 'p1', companyId: 'c1', carId: 'car1', name: 'A', employerName: 'Test Co', phone: '971500000000',
   pickupArea: 'X', dropArea: 'Y', route: 'X → Y', seatNumber: 1,
   billingType: 'monthly', monthlyFee: 350, perTripFee: 0, joinDate: '2026-01-01',
   status: 'active', createdAt: '2026-01-01', updatedAt: '2026-01-01', ...o,

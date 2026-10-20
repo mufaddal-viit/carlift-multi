@@ -63,6 +63,7 @@ export interface Passenger {
   companyId: string;
   carId: string;
   name: string;
+  employerName: string;
   phone: string;
   pickupArea: string;
   dropArea: string;
@@ -135,10 +136,12 @@ export interface DashboardData {
 
 export type PassengerInput = Pick<
   Passenger,
-  'carId' | 'name' | 'phone' | 'pickupArea' | 'dropArea' | 'seatNumber' | 'billingType' | 'monthlyFee' | 'perTripFee' | 'joinDate'
+  'carId' | 'name' | 'employerName' | 'phone' | 'pickupArea' | 'dropArea' | 'seatNumber' | 'billingType' | 'monthlyFee' | 'perTripFee' | 'joinDate'
 >;
 
 export type PaymentInput = Pick<Payment, 'passengerId' | 'amount' | 'date' | 'method' | 'forMonth' | 'note'>;
+
+export type RegistrationInput = Pick<Passenger, 'name' | 'employerName' | 'phone' | 'pickupArea' | 'dropArea'>;
 
 export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email'>;
 
@@ -160,5 +163,9 @@ export interface Repository {
   markTrips(s: Session, date: string, marks: { passengerId: string; status: Trip['status'] }[]): Promise<Trip[]>;
   statusBoard(s: Session, month: string): Promise<StatusRow[]>;
   dashboard(s: Session, month: string): Promise<DashboardData>;
+  /** Public: get company name by id (no auth required). */
+  companyById(companyId: string): Promise<{ id: string; name: string; phone: string } | null>;
+  /** Public: self-register a passenger from QR/link (no auth required). */
+  registerPassenger(companyId: string, input: RegistrationInput): Promise<Passenger>;
   reset(): Promise<void>;
 }

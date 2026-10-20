@@ -2,6 +2,7 @@ import type { Role, Session } from '../repo/types';
 
 const PORTALS: [prefix: string, role: Role][] = [['/admin', 'admin'], ['/app', 'manager'], ['/driver', 'driver'], ['/rider', 'rider']];
 const GUEST_ONLY = ['/login', '/signup'];
+const PUBLIC = ['/register'];
 
 export type Home = '/admin' | '/app' | '/driver' | '/rider';
 
@@ -13,6 +14,8 @@ export function requiredRole(path: string): Role | null {
 }
 
 export function decide(path: string, session: Session | null): { allow: true } | { redirect: string } {
+  // Public routes (registration) are always allowed
+  if (PUBLIC.some((p) => path === p || path.startsWith(`${p}/`))) return { allow: true };
   const need = requiredRole(path);
   if (!need) return session && GUEST_ONLY.includes(path) ? { redirect: homeFor(session.role) } : { allow: true };
   if (!session) return { redirect: '/login' };

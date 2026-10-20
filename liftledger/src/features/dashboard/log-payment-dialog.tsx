@@ -16,6 +16,7 @@ import { useLogPayment, useStatusBoard } from '@/data/hooks';
 
 interface FormValues {
   passengerId: string;
+  search: string;
   amount: string;
   date: string;
   method: PayMethod;
@@ -42,13 +43,23 @@ export function LogPaymentDialog({
   const save = useLogPayment();
 
   // Riders who owe the most come first: they are the likeliest to be paying.
-  const riders = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
+  const allRiders = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
 
-  const { register, handleSubmit, control, setValue, reset, formState } = useForm<FormValues>({
-    defaultValues: { passengerId: passengerId ?? '', amount: '', date: today, method: 'cash', forMonth: thisMonth, note: '' },
+  const { register, handleSubmit, control, setValue, reset, formState, watch } = useForm<FormValues>({
+    defaultValues: { passengerId: passengerId ?? '', search: '', amount: '', date: today, method: 'cash', forMonth: thisMonth, note: '' },
   });
   const { errors } = formState;
-  const [chosenId, forMonth] = useWatch({ control, name: ['passengerId', 'forMonth'] });
+  const [chosenId, forMonth, searchQuery] = useWatch({ control, name: ['passengerId', 'forMonth', 'search'] });
+
+  // Filter riders by search query (name or employer name)
+  const riders = useMemo(() => {
+    const query = (searchQuery ?? '').toLowerCase().trim();
+    const filtered = query
+      ? allRiders.filter((r) => r.passenger.name.toLowerCase().includes(query) || r.passenger.employerName.toLowerCase().includes(query))
+      : allRiders;
+    return filtered;
+  }, [allRiders, searchQuery]);
+
   const chosen = riders.find((r) => r.passenger.id === chosenId);
   const owes = chosen && forMonth === thisMonth && chosen.ledger.balance > 0 ? chosen.ledger.balance : 0;
 
@@ -75,11 +86,13 @@ export function LogPaymentDialog({
   return (
     <Dialog open={open} onOpenChange={close} title={t('payment.title')} description={t('payment.subtitle')}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <Field
-          label={t('payment.rider')}
-          error={errors.passengerId && t('payment.errorRider')}
-          hint={owes ? t('payment.balanceHint', { name: chosen!.passenger.name, amount: formatMoney(owes, locale) }) : undefined}
-        >
+        <div className="flex flex-col gap-2">
+          <label className="text-[13px] font-medium text-ink-muted">{t('payment.rider')}</label>
+          <Input
+            type="search"
+            placeholder={t('common.search')}
+            {...register('search')}
+          />
           <Select
             {...register('passengerId', {
               required: true,
@@ -88,16 +101,21 @@ export function LogPaymentDialog({
                 if (r && r.ledger.balance > 0) setValue('amount', String(r.ledger.balance), { shouldValidate: formState.isSubmitted });
               },
             })}
+            aria-invalid={!!errors.passengerId}
           >
             <option value="">{t('payment.chooseRider')}</option>
             {riders.map((r) => (
               <option key={r.passenger.id} value={r.passenger.id}>
-                {r.passenger.name}
+                {r.passenger.name} ({r.passenger.employerName})
                 {r.ledger.balance > 0 ? ` · ${t('dashboard.due', { amount: formatMoney(r.ledger.balance, locale) })}` : ''}
               </option>
             ))}
           </Select>
-        </Field>
+          {errors.passengerId && <p className="text-xs text-overdue">{t('payment.errorRider')}</p>}
+          {owes ? (
+            <p className="text-xs text-ink-muted mt-1">{t('payment.balanceHint', { name: chosen!.passenger.name, amount: formatMoney(owes, locale) })}</p>
+          ) : null}
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('payment.amount')} error={errors.amount && t('payment.errorAmount')}>

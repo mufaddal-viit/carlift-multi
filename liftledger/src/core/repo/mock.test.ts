@@ -136,7 +136,7 @@ describe('passengers', () => {
   it('saves a new rider into the manager company with a derived route', async () => {
     const car = (await repo.cars(manager))[0];
     const p = await repo.savePassenger(manager, {
-      carId: car.id, name: 'New Rider', phone: '971501112233', pickupArea: 'Karama', dropArea: 'JLT', seatNumber: 9,
+      carId: car.id, name: 'New Rider', employerName: 'Test Company', phone: '971501112233', pickupArea: 'Karama', dropArea: 'JLT', seatNumber: 9,
       billingType: 'monthly', monthlyFee: 300, perTripFee: 0, joinDate: TODAY,
     });
     expect(p).toMatchObject({ companyId: DEMO_COMPANY_ID, route: 'Karama → JLT', status: 'active' });
@@ -146,7 +146,7 @@ describe('passengers', () => {
     const admin = await as('admin');
     const foreignCar = (await repo.cars(admin)).find((c) => c.companyId !== DEMO_COMPANY_ID)!;
     await expect(repo.savePassenger(manager, {
-      carId: foreignCar.id, name: 'X', phone: '971501112233', pickupArea: 'A', dropArea: 'B', seatNumber: 1,
+      carId: foreignCar.id, name: 'X', employerName: 'Y', phone: '971501112233', pickupArea: 'A', dropArea: 'B', seatNumber: 1,
       billingType: 'monthly', monthlyFee: 300, perTripFee: 0, joinDate: TODAY,
     })).rejects.toThrow('not-found');
   });

@@ -1,18 +1,30 @@
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Route } from '@/components/illustrations';
 import { PageHeader } from '@/components/shell/manager-shell';
 import { Card } from '@/components/ui/card';
+import { PassengersPage } from '@/features/passengers/passengers-page';
 
-// Temporary: each of these sections gets its real screens in the Manager Portal build.
 const SECTIONS = ['fleet', 'passengers', 'payments', 'attendance', 'reminders', 'settings'] as const;
 type Section = (typeof SECTIONS)[number];
 
-export default async function ComingSoon({ params }: { params: Promise<{ section: string[] }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ section: string[] }> }) {
   const { section } = await params;
+  const key = section[0];
+  const t = await getTranslations('nav');
+  return { title: t(key as Section) };
+}
+
+export default async function SectionPage({ params }: { params: Promise<{ section: string[]; locale: string }> }) {
+  const { section, locale } = await params;
+  setRequestLocale(locale);
   const key = section[0] as Section;
   if (!SECTIONS.includes(key)) notFound();
   const t = await getTranslations();
+
+  if (key === 'passengers') {
+    return <PassengersPage />;
+  }
 
   return (
     <>
