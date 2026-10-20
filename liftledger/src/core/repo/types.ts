@@ -143,7 +143,7 @@ export type PaymentInput = Pick<Payment, 'passengerId' | 'amount' | 'date' | 'me
 
 export type RegistrationInput = Pick<Passenger, 'name' | 'employerName' | 'phone' | 'pickupArea' | 'dropArea'>;
 
-export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email'>;
+export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email' | 'companyId'> & { companyName: string | null };
 
 export interface Repository {
   login(identifier: string, password: string): Promise<Session>;

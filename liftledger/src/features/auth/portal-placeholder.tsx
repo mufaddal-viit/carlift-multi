@@ -18,8 +18,8 @@ export function PortalPlaceholder({ role, name }: { role: Role; name: string }) 
   const router = useRouter();
   const client = useQueryClient();
 
-  const leave = () => {
-    signOut();
+  const leave = async () => {
+    await signOut();
     client.clear();
     router.replace('/login');
   };

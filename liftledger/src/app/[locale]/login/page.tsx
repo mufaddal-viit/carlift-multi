@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { DemoLogin } from '@/features/auth/demo-login';
+import { SignIn } from '@/features/auth/sign-in';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -10,5 +10,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <DemoLogin />;
+  return <SignIn />;
 }

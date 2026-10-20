@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import { DropdownMenu } from 'radix-ui';
 import { PageTransition, spring } from '@/components/motion';
 import { Avatar } from '@/components/ui/avatar';
-import { useSession } from '@/data/hooks';
+import { useCompany, useSession } from '@/data/hooks';
 import { signOut } from '@/data/session-client';
 import { LogPaymentDialog } from '@/features/dashboard/log-payment-dialog';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
@@ -36,10 +36,11 @@ function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
   const session = useSession();
+  const company = useCompany();
   const client = useQueryClient();
 
-  const leave = () => {
-    signOut();
+  const leave = async () => {
+    await signOut();
     client.clear();
     router.replace('/login');
   };
@@ -82,14 +83,17 @@ function TopBar() {
         <LocaleToggle />
         <ThemeToggle />
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" aria-label={session.name}>
+          <DropdownMenu.Trigger className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" aria-label={session.name} data-testid="account-menu">
             <Avatar name={session.name} size="md" className="size-11 text-sm" />
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content align="end" sideOffset={10} className="z-50 min-w-56 rounded-inner bg-card p-2 shadow-card ring-1 ring-line">
               <div className="px-3 py-2">
                 <p className="text-sm font-semibold">{session.name}</p>
-                <p className="text-xs text-ink-muted">{t(`login.roles.${session.role}`)}</p>
+                <p className="text-xs text-ink-muted">
+                  {t(`login.roles.${session.role}`)}
+                  {company.data && ` · ${company.data.name}`}
+                </p>
               </div>
               <DropdownMenu.Item
                 onSelect={leave}

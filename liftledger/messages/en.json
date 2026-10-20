@@ -105,11 +105,25 @@
     "balanceHint": "{name} owes {amount} for this month."
   },
   "login": {
-    "title": "Choose a demo account",
-    "subtitle": "The full sign-in page arrives in the next build. For now, step into any role.",
-    "continueAs": "Continue as {name}",
+    "title": "Sign in",
+    "subtitle": "Use the email or mobile number and password your company gave you.",
+    "identifier": "Email or mobile number",
+    "identifierPlaceholder": "name@company.ae or 050 123 4567",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in",
+    "errors": {
+      "invalid-input": "Enter your email or mobile number and your password.",
+      "invalid-credentials": "That email, mobile number or password is not right.",
+      "company-suspended": "Your company's account is suspended. Contact LiftLedger support.",
+      "failed": "Could not sign in. Check your connection and try again."
+    },
+    "demoTitle": "Demo accounts",
+    "demoHint": "Tap an account to fill in its details, then sign in. Every demo password is {password}.",
+    "fillAs": "Fill in the details for {name}",
+    "platform": "LiftLedger platform",
     "kit": "Open the design kit",
-    "failed": "Could not sign in. Try again.",
     "roles": {
       "admin": "Platform admin",
       "manager": "Manager",

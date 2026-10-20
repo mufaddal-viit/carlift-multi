@@ -1,12 +1,23 @@
-import { encodeSession, SESSION_COOKIE } from '@/core/auth/session';
-import type { Session } from '@/core/repo/types';
+import type { Home } from '@/core/auth/guards';
 
-const WEEK = 60 * 60 * 24 * 7;
+export type SignInError = 'invalid-input' | 'invalid-credentials' | 'company-suspended' | 'failed';
 
-export function signIn(session: Session) {
-  document.cookie = `${SESSION_COOKIE}=${encodeSession(session)}; path=/; max-age=${WEEK}; samesite=lax`;
+/** Asks the server to check the credentials. On success the server sets the signed session cookie. */
+export async function signIn(identifier: string, password: string): Promise<{ home: Home } | { error: SignInError }> {
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password }),
+    });
+    const data = (await response.json().catch(() => ({}))) as { home?: Home; error?: SignInError };
+    if (response.ok && data.home) return { home: data.home };
+    return { error: data.error ?? 'failed' };
+  } catch {
+    return { error: 'failed' };
+  }
 }
 
-export function signOut() {
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+export async function signOut() {
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
 }

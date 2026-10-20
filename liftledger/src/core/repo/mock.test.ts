@@ -36,6 +36,22 @@ describe('login', () => {
     const s = await repo.login('+971 50 100 0001', DEMO_PASSWORD);
     expect(s.role).toBe('manager');
   });
+  it('accepts a local mobile number', async () => {
+    const s = await repo.login('050 100 0001', DEMO_PASSWORD);
+    expect(s.role).toBe('manager');
+  });
+  it('signs each manager into their own company', async () => {
+    const s = await repo.login('manager@skyline.example', DEMO_PASSWORD);
+    expect(s).toMatchObject({ role: 'manager', companyId: 'co-skyline' });
+  });
+  it('refuses users of a suspended company', () =>
+    expect(repo.login('manager@palm.example', DEMO_PASSWORD)).rejects.toThrow('company-suspended'));
+  it('does not reveal a suspended company to a wrong password', () =>
+    expect(repo.login('manager@palm.example', 'nope')).rejects.toThrow('invalid-credentials'));
+  it('lists a manager for every company among the demo accounts', async () => {
+    const managers = (await repo.demoUsers()).filter((u) => u.role === 'manager');
+    expect(managers.map((u) => u.companyName)).toEqual(['Al Majra Transport', 'Skyline Commute', 'Oasis Riders', 'Palm Shuttle']);
+  });
   it('rejects a wrong password', () =>
     expect(repo.login('manager@almajra.ae', 'nope')).rejects.toThrow('invalid-credentials'));
   it('rejects an unknown user', () =>

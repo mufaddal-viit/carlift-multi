@@ -23,7 +23,7 @@ function isDb(x: unknown, month: string): x is Db {
   return d.version === DB_VERSION && d.seedMonth === month && LISTS.every((k) => Array.isArray(d[k]));
 }
 
-const fail = (code: 'not-found' | 'forbidden' | 'invalid-input' | 'invalid-credentials') => new Error(code);
+const fail = (code: 'not-found' | 'forbidden' | 'invalid-input' | 'invalid-credentials' | 'company-suspended') => new Error(code);
 
 export function createMockRepository(opts: MockOptions = {}): Repository {
   const storage = opts.storage ?? null;
@@ -95,10 +95,13 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
   return {
     async login(identifier, password) {
       await wait();
+      const d = db();
       const id = identifier.trim().toLowerCase();
-      const digits = id.replace(/\D/g, '');
-      const u = db().users.find((x) => (id.includes('@') ? x.email?.toLowerCase() === id : digits.length > 0 && x.phone === digits));
+      // Local mobile numbers (050 123 4567) are stored in international form (971501234567).
+      const digits = id.replace(/\D/g, '').replace(/^0(?=5\d{8}$)/, '971');
+      const u = d.users.find((x) => (id.includes('@') ? x.email?.toLowerCase() === id : digits.length > 0 && x.phone === digits));
       if (!u || u.password !== password) throw fail('invalid-credentials');
+      if (u.companyId && d.companies.find((c) => c.id === u.companyId)?.status === 'suspended') throw fail('company-suspended');
       return toSession(u);
     },
 
@@ -113,9 +116,10 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
       await wait();
       const d = db();
       const first = d.companies[0]?.id;
+      const companyName = (id: string | null) => d.companies.find((c) => c.id === id)?.name ?? null;
       return d.users
-        .filter((u) => u.companyId === first || u.role === 'admin')
-        .map(({ id, name, role, email }) => ({ id, name, role, email }));
+        .filter((u) => u.companyId === first || u.role === 'admin' || u.role === 'manager')
+        .map(({ id, name, role, email, companyId }) => ({ id, name, role, email, companyId, companyName: companyName(companyId) }));
     },
 
     async company(s) {

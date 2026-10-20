@@ -9,10 +9,21 @@ const shot = async (page: Page, name: string) => {
   if (shots) await page.screenshot({ path: path.join(shots, `${test.info().project.name}-${name}.jpg`), fullPage: true, type: 'jpeg', quality: 80 });
 };
 
+/** The Al Majra demo account for each role (the platform admin has no company). */
+const DEMO_ACCOUNT: Record<Role, string> = { manager: 'u-mgr-majra', driver: 'u-drv-majra-1', rider: 'u-rider-majra-1', admin: 'u-admin' };
+
 async function signIn(page: Page, role: Role, locale: 'en' | 'ar' = 'en') {
   await page.goto(`/${locale}/login`);
-  await page.getByTestId(`demo-${role}`).click();
+  await page.getByTestId(`demo-${DEMO_ACCOUNT[role]}`).click();
+  await page.getByTestId('login-submit').click();
   await page.waitForURL(new RegExp(`/${locale}/(app|driver|rider|admin)$`));
+}
+
+async function signInWith(page: Page, identifier: string, password: string) {
+  await page.goto('/en/login');
+  await page.getByTestId('login-identifier').fill(identifier);
+  await page.getByTestId('login-password').fill(password);
+  await page.getByTestId('login-submit').click();
 }
 
 const collected = async (page: Page) => {
@@ -35,6 +46,44 @@ test('a visitor who is not signed in is sent to login', async ({ page }) => {
 
 test('the bare address leads to the English login', async ({ page }) => {
   await page.goto('/');
+  await expect(page).toHaveURL(/\/en\/login$/);
+});
+
+test('signing in needs the right password', async ({ page }) => {
+  await signInWith(page, 'manager@almajra.ae', 'wrong-password');
+  await expect(page.getByTestId('login-error')).toHaveText('That email, mobile number or password is not right.');
+  await expect(page).toHaveURL(/\/en\/login$/);
+});
+
+test('an empty form says what is missing instead of submitting', async ({ page }) => {
+  await page.goto('/en/login');
+  await page.getByTestId('login-submit').click();
+  await expect(page.getByTestId('login-error')).toHaveText('Enter your email or mobile number and your password.');
+});
+
+test('each manager lands in their own company', async ({ page }) => {
+  await signInWith(page, 'manager@skyline.example', 'demo1234');
+  await page.waitForURL(/\/en\/app$/);
+  await page.getByTestId('account-menu').click();
+  await expect(page.getByRole('menu')).toContainText('Skyline Commute');
+  const cookie = (await page.context().cookies()).find((c) => c.name === 'll_session');
+  expect(cookie?.httpOnly).toBe(true);
+});
+
+test('a suspended company cannot sign in', async ({ page }) => {
+  await signInWith(page, 'manager@palm.example', 'demo1234');
+  await expect(page.getByTestId('login-error')).toContainText('suspended');
+});
+
+test('a mobile number in local format signs in too', async ({ page }) => {
+  await signInWith(page, '050 100 0001', 'demo1234');
+  await page.waitForURL(/\/en\/app$/);
+});
+
+test('a hand-made session cookie does not open a portal', async ({ page, context, baseURL }) => {
+  const forged = encodeURIComponent(JSON.stringify({ userId: 'u-admin', role: 'admin', companyId: null, name: 'Mallory', locale: 'en' }));
+  await context.addCookies([{ name: 'll_session', value: forged, url: baseURL! }]);
+  await page.goto('/en/admin');
   await expect(page).toHaveURL(/\/en\/login$/);
 });
 
