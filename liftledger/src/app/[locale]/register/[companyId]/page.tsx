@@ -1,8 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 import { PassengerRegistration } from '@/features/auth/passenger-registration';
-import { RepoProvider } from '@/data/hooks';
 import { createMockRepository } from '@/core/repo/mock';
-import { Providers } from '@/components/providers';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; companyId: string }> }) {
   const { locale, companyId } = await params;
@@ -31,14 +29,10 @@ export default async function RegistrationPage({ params }: { params: Promise<{ l
   }
 
   return (
-    <Providers>
-      <RepoProvider repo={repo}>
-        <div className="min-h-dvh flex items-center justify-center px-4 py-8">
-          <div className="w-full max-w-md">
-            <PassengerRegistration companyId={companyId} companyName={company.name} />
-          </div>
-        </div>
-      </RepoProvider>
-    </Providers>
+    <div className="min-h-dvh flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        <PassengerRegistration companyId={companyId} companyName={company.name} />
+      </div>
+    </div>
   );
 }
