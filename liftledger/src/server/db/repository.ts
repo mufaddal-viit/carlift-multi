@@ -3,13 +3,15 @@ import { addMonths, companySummary, statusFor } from '@/core/billing';
 import { todayInDubai } from '@/core/clock';
 import { canWrite, visibleCars, visiblePassengers, type WriteAction } from '@/core/repo/scope';
 import type {
-  Car, Company, Db, Driver, Passenger, PassengerInput, Payment, PublicCompany, Repository, Session, StatusRow, Trip, User,
+  Car, CarAssignment, Company, Db, Driver, FleetCar, Passenger, PassengerInput, Payment, PublicCompany, Repository, Session, StatusRow,
+  Trip, User,
 } from '@/core/repo/types';
 import { DUMMY_HASH, verifyPassword } from './password';
 import { forCompany, type CompanyDb } from './tenant';
 
 export type RepoError =
-  | 'not-found' | 'forbidden' | 'invalid-input' | 'invalid-credentials' | 'company-suspended' | 'duplicate-phone' | 'invalid-phone';
+  | 'not-found' | 'forbidden' | 'invalid-input' | 'invalid-credentials' | 'company-suspended' | 'duplicate-phone' | 'invalid-phone'
+  | 'car-full' | 'car-inactive' | 'passenger-inactive';
 
 export const fail = (code: RepoError) => new Error(code);
 
@@ -55,6 +57,46 @@ const toTrip = (t: Prisma.TripGetPayload<object>): Trip => ({
 });
 
 const isUniqueViolation = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+/** MongoDB aborted a transaction because another one wrote the same document first. */
+const isWriteConflict = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2034';
+
+/**
+ * Puts a passenger in a car (or takes them out with null) and records the change.
+ *
+ * Runs in a transaction that also writes the car, so two changes racing for its last seat touch the same document:
+ * MongoDB lets one commit and aborts the other, which is retried, recounts the seats and reports the car full.
+ * The passenger gets the lowest free seat number.
+ */
+async function moveToCar(db: CompanyDb, companyId: string, passengerId: string, carId: string | null, byUserId: string | null) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await db.$transaction(async (tx) => {
+        const p = await tx.passenger.findFirst({ where: { id: passengerId } });
+        if (!p) throw fail('not-found');
+        if (p.carId === carId) return p;
+        if (p.status !== 'active') throw fail('passenger-inactive');
+        let seatNumber = 0;
+        if (carId !== null) {
+          const car = await tx.car.findFirst({ where: { id: carId } });
+          if (!car) throw fail('not-found');
+          if (car.status !== 'active') throw fail('car-inactive');
+          const riders = await tx.passenger.findMany({ where: { carId, status: 'active' }, select: { seatNumber: true } });
+          if (riders.length >= car.capacity) throw fail('car-full');
+          const taken = new Set(riders.map((r) => r.seatNumber));
+          seatNumber = 1;
+          while (taken.has(seatNumber)) seatNumber += 1;
+          await tx.car.update({ where: { id: carId }, data: { seatsChangedAt: new Date() } });
+        }
+        const moved = await tx.passenger.update({ where: { id: passengerId }, data: { carId, seatNumber } });
+        await tx.carAssignment.create({ data: { companyId, passengerId, fromCarId: p.carId, toCarId: carId, byUserId } });
+        return moved;
+      });
+    } catch (e) {
+      if (attempt < 5 && isWriteConflict(e)) continue;
+      throw e;
+    }
+  }
+}
 
 // ---- Repository ------------------------------------------------------------
 
@@ -216,17 +258,25 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
         seatNumber: input.seatNumber, billingType: input.billingType, monthlyFee: input.monthlyFee, perTripFee: input.perTripFee,
         joinDate: input.joinDate,
       };
+      // The car is changed separately, through the same seat checks and history as assignCar.
+      const { carId, ...details } = fields;
+      let saved: Prisma.PassengerGetPayload<object>;
       try {
         if (id) {
           allow(s, d, 'passenger', seen(s, d, id));
-          return toPassenger(await c.db.passenger.update({ where: { id }, data: fields }));
+          saved = await c.db.passenger.update({ where: { id }, data: details });
+        } else {
+          allow(s, d, 'passenger', { companyId: c.company.id, carId });
+          saved = await c.db.passenger.create({
+            data: { ...details, carId: null, seatNumber: 0, companyId: c.company.id, status: 'active' },
+          });
         }
-        allow(s, d, 'passenger', { companyId: c.company.id, carId: fields.carId });
-        return toPassenger(await c.db.passenger.create({ data: { ...fields, companyId: c.company.id, status: 'active' } }));
       } catch (e) {
         if (isUniqueViolation(e)) throw fail('duplicate-phone');
         throw e;
       }
+      if (saved.carId === carId) return toPassenger(saved);
+      return toPassenger(await moveToCar(c.db, c.company.id, saved.id, carId, s.userId));
     },
 
     async deactivatePassenger(s, id) {
@@ -234,6 +284,34 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       const d = await slice(c, null);
       allow(s, d, 'passenger', seen(s, d, id));
       return toPassenger(await c.db.passenger.update({ where: { id }, data: { status: 'inactive' } }));
+    },
+
+    async fleet(s) {
+      const d = await slice(await ctx(s), null);
+      return visibleCars(s, d).map((car): FleetCar => ({
+        ...car,
+        driver: d.drivers.find((x) => x.id === car.driverId) ?? null,
+        passengers: d.passengers.filter((p) => p.carId === car.id && p.status === 'active').length,
+      }));
+    },
+
+    async assignCar(s, passengerId, carId) {
+      const c = await ctx(s);
+      if (c.actor.role !== 'manager') throw fail('forbidden');
+      return toPassenger(await moveToCar(c.db, c.company.id, passengerId, carId, s.userId));
+    },
+
+    async assignments(s, passengerId) {
+      const c = await ctx(s);
+      seen(s, await slice(c, null), passengerId);
+      const rows = await c.db.carAssignment.findMany({ where: { passengerId }, orderBy: { at: 'desc' }, take: 50 });
+      const userIds = [...new Set(rows.map((r) => r.byUserId).filter((x): x is string => x !== null))];
+      const users = await c.db.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } });
+      const names = new Map(users.map((u) => [u.id, u.name]));
+      return rows.map((r): CarAssignment => ({
+        id: r.id, passengerId: r.passengerId, fromCarId: r.fromCarId, toCarId: r.toCarId, byUserId: r.byUserId,
+        byName: r.byUserId ? (names.get(r.byUserId) ?? null) : null, at: iso(r.at),
+      }));
     },
 
     async payments(s, month) {
@@ -355,18 +433,25 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       const open = cars.filter((car) => (load.get(car.id) ?? 0) < car.capacity);
       const best = open.sort((a, b) => (load.get(a.id) ?? 0) - (load.get(b.id) ?? 0))[0] ?? null;
 
+      let row: Prisma.PassengerGetPayload<object>;
       try {
-        const row = await db.passenger.create({
+        row = await db.passenger.create({
           data: {
-            companyId, carId: best?.id ?? null, name: input.name.trim(), employerName: input.employerName.trim(), phone,
+            companyId, carId: null, name: input.name.trim(), employerName: input.employerName.trim(), phone,
             pickupArea: input.pickupArea, dropArea: input.dropArea, route: `${input.pickupArea} → ${input.dropArea}`,
-            seatNumber: best ? (load.get(best.id) ?? 0) + 1 : 0, billingType: 'monthly', monthlyFee: 0, perTripFee: 0,
-            joinDate: today(), status: 'active',
+            seatNumber: 0, billingType: 'monthly', monthlyFee: 0, perTripFee: 0, joinDate: today(), status: 'active',
           },
         });
-        return toPassenger(row);
       } catch (e) {
         if (isUniqueViolation(e)) throw fail('duplicate-phone');
+        throw e;
+      }
+      if (!best) return toPassenger(row);
+      try {
+        return toPassenger(await moveToCar(db, companyId, row.id, best.id, null));
+      } catch (e) {
+        // The suggested car filled up meanwhile: the passenger waits for the manager to choose one.
+        if (e instanceof Error && e.message === 'car-full') return toPassenger(row);
         throw e;
       }
     },

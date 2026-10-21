@@ -215,3 +215,53 @@ test('the design kit and dashboard load without console errors or sideways scrol
   await page.waitForLoadState('networkidle');
   expect(errors).toEqual([]);
 });
+
+/** Desktop and phone runs share one database, so each moves its own passengers (all start in car 1, B 12345). */
+const mover = () =>
+  test.info().project.name === 'phone'
+    ? { id: 'pax-majra-4', name: 'Lina Haddad', other: 'pax-majra-5', otherName: 'Omar Farouk' }
+    : { id: 'pax-majra-1', name: 'Priya Nair', other: 'pax-majra-2', otherName: 'Rahul Menon' };
+
+test('a manager moves a passenger to another car, and the change shows everywhere', async ({ page }) => {
+  const { id, name } = mover();
+  await signIn(page, 'manager');
+  await page.goto(`/en/${MAJRA}/app/passengers`);
+  await expect(page.getByTestId(`car-of-${id}`).filter({ visible: true })).toContainText('B 12345');
+
+  await page.getByTestId(`assign-${id}`).filter({ visible: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByTestId('car-option-car-majra-1')).toContainText('Current');
+  await expect(dialog.getByTestId('assign-save')).toBeDisabled();
+  await dialog.getByTestId('car-option-car-majra-3').click();
+  await shot(page, 'assign-car');
+  await dialog.getByTestId('assign-save').click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText(`${name} now rides in A 44821.`)).toBeVisible();
+  await expect(page.getByTestId(`car-of-${id}`).filter({ visible: true })).toContainText('A 44821');
+
+  // The statement shows the new car and the move in its history.
+  await page.goto(`/en/${MAJRA}/app/passengers/${id}`);
+  await expect(page.getByTestId('soa-car')).toContainText('A 44821');
+  await expect(page.getByTestId('car-history')).toContainText('Moved from B 12345 to A 44821');
+  await expect(page.getByTestId('car-history')).toContainText('by Salim Al Majra');
+});
+
+test('a passenger taken out of their car is listed as waiting until given one', async ({ page }) => {
+  const { other: id, otherName: name } = mover();
+  await signIn(page, 'manager');
+  await page.goto(`/en/${MAJRA}/app/passengers/${id}`);
+  await page.getByTestId('soa-assign').click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByTestId('car-option-none').click();
+  await dialog.getByTestId('assign-save').click();
+  await expect(page.getByTestId('soa-car')).toHaveText('No car');
+
+  await page.goto(`/en/${MAJRA}/app/passengers`);
+  await page.getByRole('radio', { name: /Waiting for a car/ }).click();
+  await expect(page.getByRole('link', { name }).filter({ visible: true })).toBeVisible();
+  await page.getByTestId(`assign-${id}`).filter({ visible: true }).click();
+  await page.getByRole('dialog').getByTestId('car-option-car-majra-2').click();
+  await page.getByRole('dialog').getByTestId('assign-save').click();
+  await expect(page.getByText(`${name} now rides in D 67890.`)).toBeVisible();
+  await expect(page.getByRole('link', { name })).toHaveCount(0);
+});

@@ -132,11 +132,26 @@ export interface StatusRow {
   ledger: import('../billing/engine').Ledger;
 }
 
+/** A car with its driver and how many active passengers ride in it. */
+export type FleetCar = Car & { driver: Driver | null; passengers: number };
+
+/** One change of a passenger's car. */
+export interface CarAssignment {
+  id: string;
+  passengerId: string;
+  fromCarId: string | null;
+  toCarId: string | null;
+  /** Null when the system chose the car at self-registration. */
+  byUserId: string | null;
+  byName: string | null;
+  at: string;
+}
+
 export interface DashboardData {
   summary: import('../billing/summary').CompanySummary;
   rows: StatusRow[];
   recentPayments: (Payment & { passengerName: string })[];
-  cars: (Car & { driver: Driver | null; passengers: number })[];
+  cars: FleetCar[];
 }
 
 export type PassengerInput = Pick<
@@ -165,6 +180,12 @@ export interface Repository {
   passenger(s: Session, id: string): Promise<Passenger>;
   savePassenger(s: Session, input: PassengerInput, id?: string): Promise<Passenger>;
   deactivatePassenger(s: Session, id: string): Promise<Passenger>;
+  /** Cars with their driver and seats taken, for choosing where a passenger rides. */
+  fleet(s: Session): Promise<FleetCar[]>;
+  /** Manager: put a passenger in a car (checks it is active, in the company and has a free seat), or take them out with null. */
+  assignCar(s: Session, passengerId: string, carId: string | null): Promise<Passenger>;
+  /** A passenger's car changes, newest first. */
+  assignments(s: Session, passengerId: string): Promise<CarAssignment[]>;
   payments(s: Session, month?: string): Promise<Payment[]>;
   logPayment(s: Session, input: PaymentInput): Promise<Payment>;
   deletePayment(s: Session, id: string): Promise<void>;

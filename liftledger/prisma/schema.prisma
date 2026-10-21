@@ -139,6 +139,8 @@ model Car {
   driverId  String?
   status    RecordStatus @default(active)
   photoKey  String       @default("hiace")
+  /// Written by every seat change, so two changes racing for the last seat conflict and one is retried.
+  seatsChangedAt DateTime?
   createdAt DateTime     @default(now())
 
   @@unique([companyId, plate])
@@ -191,6 +193,23 @@ model Payment {
   @@index([companyId, forMonth])
   @@index([companyId, passengerId])
   @@map("payments")
+}
+
+/// Every time a passenger is put in a car, moved, or taken out of one. Newest first by `at`.
+model CarAssignment {
+  id          String   @id @default(cuid()) @map("_id")
+  companyId   String
+  passengerId String
+  /// Null when the passenger had no car before.
+  fromCarId   String?
+  /// Null when the passenger was taken out of their car.
+  toCarId     String?
+  /// Null when the system chose the car (public self-registration).
+  byUserId    String?
+  at          DateTime @default(now())
+
+  @@index([companyId, passengerId, at])
+  @@map("car_assignments")
 }
 
 model Trip {

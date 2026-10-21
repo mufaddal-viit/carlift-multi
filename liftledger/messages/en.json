@@ -258,5 +258,40 @@
     "receipt": "A printed receipt",
     "shield": "A shield with a tick",
     "emptyRoad": "An empty road stretching ahead"
+  },
+  "assign": {
+    "title": "Cars",
+    "assign": "Assign car",
+    "change": "Change car",
+    "description": "Choose the car {name} rides in. Full and inactive cars cannot be chosen.",
+    "noCar": "No car",
+    "noCarHint": "Waiting for a car",
+    "seats": "{used} / {total} seats",
+    "seat": "Seat {n}",
+    "full": "Full",
+    "inactive": "Not in service",
+    "current": "Current",
+    "driverless": "No driver assigned",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "{name} now rides in {plate}.",
+    "removed": "{name} is now waiting for a car.",
+    "errors": {
+      "car-full": "That car just filled up. Choose another one.",
+      "car-inactive": "That car is not in service.",
+      "passenger-inactive": "This passenger is inactive.",
+      "not-found": "That car or passenger no longer exists.",
+      "failed": "Could not save. Check your connection and try again."
+    },
+    "filterAll": "All",
+    "filterWaiting": "Waiting for a car",
+    "noneWaiting": "Every active passenger has a car.",
+    "history": "Car and seat",
+    "historyEmpty": "No car changes yet.",
+    "joinedCar": "Put in {to}",
+    "movedCar": "Moved from {from} to {to}",
+    "removedCar": "Taken out of {from}",
+    "by": "by {name}",
+    "bySystem": "chosen at registration"
   }
 }

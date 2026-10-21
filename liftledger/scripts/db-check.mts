@@ -7,7 +7,7 @@ type Listed = { cursor: { firstBatch: { name: string; unique?: boolean }[] } };
 
 const client = createPrisma();
 try {
-  for (const collection of ['companies', 'users', 'drivers', 'cars', 'passengers', 'payments', 'trips']) {
+  for (const collection of ['companies', 'users', 'drivers', 'cars', 'passengers', 'payments', 'trips', 'car_assignments']) {
     const indexes = ((await client.$runCommandRaw({ listIndexes: collection })) as Listed).cursor.firstBatch;
     const count = ((await client.$runCommandRaw({ count: collection })) as { n: number }).n;
     console.log(`${collection} (${count}): ${indexes.map((i) => i.name + (i.unique ? ' [unique]' : '')).join(', ')}`);

@@ -28,7 +28,7 @@ export function useSession(): Session {
   return session;
 }
 
-const LIVE = ['dashboard', 'statusBoard', 'payments', 'trips', 'passengers'];
+const LIVE = ['dashboard', 'statusBoard', 'payments', 'trips', 'passengers', 'passenger', 'fleet', 'assignments'];
 
 function useInvalidateLive() {
   const client = useQueryClient();
@@ -108,6 +108,31 @@ export function useDrivers() {
   const repo = useRepo();
   const s = useSession();
   return useQuery({ queryKey: ['drivers', s.userId], queryFn: () => repo.drivers(s) });
+}
+
+/** Cars with driver and seats taken. */
+export function useFleet() {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['fleet', s.userId], queryFn: () => repo.fleet(s) });
+}
+
+/** Moves a passenger to a car, or out of one with carId null. Refreshes every list that shows cars or passengers. */
+export function useAssignCar() {
+  const repo = useRepo();
+  const s = useSession();
+  const invalidate = useInvalidateLive();
+  return useMutation({
+    mutationFn: (v: { passengerId: string; carId: string | null }) => repo.assignCar(s, v.passengerId, v.carId),
+    onSuccess: invalidate,
+  });
+}
+
+/** A passenger's car changes, newest first. */
+export function useAssignments(passengerId: string) {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['assignments', s.userId, passengerId], queryFn: () => repo.assignments(s, passengerId) });
 }
 
 export function useDeactivatePassenger() {

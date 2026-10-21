@@ -8,6 +8,7 @@ const TENANT_COLLECTIONS: Record<string, string[]> = {
   passengers: ['string'],
   payments: ['string'],
   trips: ['string'],
+  car_assignments: ['string'],
 };
 
 const validatorFor = (types: string[]) => ({
@@ -27,10 +28,10 @@ const validatorFor = (types: string[]) => ({
  * dropped and created again instead. A collection that holds data and cannot be changed is reported, not touched.
  */
 export async function applyValidators(client: PrismaClient): Promise<string[]> {
-  const listed = (await client.$runCommandRaw({ listCollections: 1, nameOnly: true })) as {
-    cursor: { firstBatch: { name: string }[] };
+  const listed = (await client.$runCommandRaw({ listCollections: 1 })) as {
+    cursor: { firstBatch: { name: string; options?: { validator?: unknown } }[] };
   };
-  const existing = new Set(listed.cursor.firstBatch.map((c) => c.name));
+  const existing = new Map(listed.cursor.firstBatch.map((c) => [c.name, JSON.stringify(c.options?.validator ?? null)]));
   const report: string[] = [];
 
   for (const [collection, types] of Object.entries(TENANT_COLLECTIONS)) {
@@ -38,6 +39,10 @@ export async function applyValidators(client: PrismaClient): Promise<string[]> {
     if (!existing.has(collection)) {
       await client.$runCommandRaw({ create: collection, ...options });
       report.push(`${collection}: created with the rule`);
+      continue;
+    }
+    if (existing.get(collection) === JSON.stringify(options.validator)) {
+      report.push(`${collection}: rule already in place`);
       continue;
     }
     try {

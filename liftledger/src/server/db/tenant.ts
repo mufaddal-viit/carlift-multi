@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 
 /** Collections owned by a company. Every document in them carries a companyId. */
-export const TENANT_MODELS = new Set(['User', 'Driver', 'Car', 'Passenger', 'Payment', 'Trip']);
+export const TENANT_MODELS = new Set(['User', 'Driver', 'Car', 'Passenger', 'Payment', 'Trip', 'CarAssignment']);
 
 /** Operations whose `where` decides which documents are read, changed or removed. */
 const FILTERED = new Set([

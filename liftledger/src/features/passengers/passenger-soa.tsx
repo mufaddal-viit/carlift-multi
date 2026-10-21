@@ -1,18 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Bus } from 'lucide-react';
 import { formatDay, formatMoney, formatMonth } from '@/core/format';
 import { monthOf } from '@/core/billing';
 import { todayInDubai } from '@/core/clock';
 import { PageHeader } from '@/components/shell/manager-shell';
 import { Card, CardHeader } from '@/components/ui/card';
-import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { usePassenger, usePassengerPayments, useDrivers } from '@/data/hooks';
+import type { Locale } from '@/core/repo/types';
+import { useAssignments, useFleet, usePassenger, usePassengerPayments } from '@/data/hooks';
 import { useRouter } from '@/i18n/navigation';
+import { AssignCarDialog } from './assign-car-dialog';
 
 interface MonthRow {
   month: string;
@@ -23,14 +24,18 @@ interface MonthRow {
 
 export function PassengerSOA({ passengerId }: { passengerId: string }) {
   const t = useTranslations('soa');
-  const locale = useLocale() as any;
+  const ta = useTranslations('assign');
+  const locale = useLocale() as Locale;
   const router = useRouter();
   const passenger = usePassenger(passengerId);
   const payments = usePassengerPayments();
-  const drivers = useDrivers();
+  const fleet = useFleet();
+  const history = useAssignments(passengerId);
+  const [assigning, setAssigning] = useState(false);
 
   const p = passenger.data;
-  const driver = p && drivers.data ? drivers.data.find((d) => d.id === p.carId) : null;
+  const car = p?.carId ? fleet.data?.find((c) => c.id === p.carId) : undefined;
+  const plate = (carId: string | null) => (carId ? (fleet.data?.find((c) => c.id === carId)?.plate ?? '…') : ta('noCar'));
 
   const monthlyRows = useMemo(() => {
     if (!p || !payments.data) return [];
@@ -118,6 +123,16 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
           <p className="font-semibold text-sm">{p.dropArea}</p>
         </div>
         <div>
+          <p className="text-xs text-ink-muted mb-1">{t('car')}</p>
+          <p className="font-semibold text-sm" data-testid="soa-car">
+            {car ? `${car.plate} · ${ta('seat', { n: p.seatNumber })}` : ta('noCar')}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-ink-muted mb-1">{t('driver')}</p>
+          <p className="font-semibold text-sm">{car?.driver?.name ?? '—'}</p>
+        </div>
+        <div>
           <p className="text-xs text-ink-muted mb-1">{t('billingType')}</p>
           <p className="font-semibold text-sm">
             {p.billingType === 'monthly' ? t('monthly') : t('perTrip')}
@@ -136,6 +151,39 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
           </div>
         )}
       </Card>
+
+      {/* Car */}
+      <Card className="mb-6">
+        <CardHeader
+          icon={<Bus />}
+          title={ta('history')}
+          action={
+            p.status === 'active' ? (
+              <Button size="sm" variant={p.carId ? 'soft' : 'primary'} onClick={() => setAssigning(true)} data-testid="soa-assign">
+                {p.carId ? ta('change') : ta('assign')}
+              </Button>
+            ) : undefined
+          }
+        />
+        <ol className="flex flex-col gap-2 px-5 pb-5" data-testid="car-history">
+          {history.data?.length === 0 && <li className="text-sm text-ink-muted">{ta('historyEmpty')}</li>}
+          {history.data?.map((h) => (
+            <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-inner bg-soft px-4 py-2.5 text-sm">
+              <span className="font-medium">
+                {h.fromCarId === null
+                  ? ta('joinedCar', { to: plate(h.toCarId) })
+                  : h.toCarId === null
+                    ? ta('removedCar', { from: plate(h.fromCarId) })
+                    : ta('movedCar', { from: plate(h.fromCarId), to: plate(h.toCarId) })}
+              </span>
+              <span className="text-xs text-ink-muted">
+                {formatDay(h.at.slice(0, 10), locale)} · {h.byName ? ta('by', { name: h.byName }) : ta('bySystem')}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </Card>
+      {assigning && <AssignCarDialog key={p.id + String(p.carId)} passenger={p} open onOpenChange={setAssigning} />}
 
       {/* Monthly Summary */}
       <Card>

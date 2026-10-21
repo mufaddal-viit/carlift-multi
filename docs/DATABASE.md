@@ -6,7 +6,7 @@ LiftLedger keeps all its data in one MongoDB database (Atlas, connected through 
 
 | Layer | What it does | Where |
 |---|---|---|
-| 1. Data model | Every company-owned collection (`users`, `drivers`, `cars`, `passengers`, `payments`, `trips`) has a required `companyId`. Unique indexes start with it, so two companies can hold the same phone number or plate. | `prisma/schema.prisma` |
+| 1. Data model | Every company-owned collection (`users`, `drivers`, `cars`, `passengers`, `payments`, `trips`, `car_assignments`) has a required `companyId`. Unique indexes start with it, so two companies can hold the same phone number or plate. | `prisma/schema.prisma` |
 | 2. Who you are | `companyId` comes only from the signed session cookie, never from the URL or the request. Each call re-reads the user inside that company, so a deleted user or a suspended company loses access at once. | `src/server/db/repository.ts` (`ctx`) |
 | 3. Scoped client | `forCompany(client, companyId)` adds `companyId` to every read, count, update and delete. It stamps it on every insert, and it refuses filters for another company, moving a document between companies, raw queries, and the platform collections. | `src/server/db/tenant.ts` |
 | 4. Links | MongoDB has no foreign keys. A passenger's car or a payment's passenger is looked up through the same scoped client, so another company's record reads as "not found". | `src/server/db/repository.ts` |
@@ -29,6 +29,8 @@ LiftLedger keeps all its data in one MongoDB database (Atlas, connected through 
 Changing the schema: edit `schema.prisma`, run `npm run db:push`, then commit. Vercel runs `prisma generate` on install; it does not change the database.
 
 ## Notes
+
+- **Seats:** a passenger is put in a car only through `moveToCar()` in the repository. It runs in a transaction that also writes the car's `seatsChangedAt`. Two managers taking the last seat at the same moment therefore conflict in MongoDB; one is retried and told the car is full. Every change is recorded in `car_assignments`.
 
 - **Dates as text:** business dates (join, payment and trip days) are stored as `YYYY-MM-DD` text in UAE time. They are calendar days, not instants, so they must not move with server time zones.
 - **Phone numbers:** stored as international digits only, for example `971501234567`. `050 123 4567` and `+971 50 123 4567` both become that.

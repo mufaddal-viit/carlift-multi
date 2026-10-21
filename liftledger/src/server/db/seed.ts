@@ -14,6 +14,7 @@ export async function seedDatabase(client: PrismaClient, today: string, { reset 
   if (reset) {
     await Promise.all([
       client.trip.deleteMany(), client.payment.deleteMany(), client.passenger.deleteMany(), client.car.deleteMany(),
+      client.carAssignment.deleteMany(),
       client.driver.deleteMany(), client.user.deleteMany(),
     ]);
     await Promise.all([client.company.deleteMany(), client.plan.deleteMany()]);
@@ -67,6 +68,17 @@ export async function seedDatabase(client: PrismaClient, today: string, { reset 
         perTripFee: p.perTripFee, joinDate: p.joinDate, status: p.status, createdAt: at(p.createdAt), updatedAt: at(p.updatedAt),
       })),
     });
+    // Each passenger's history starts with the car they were given when they joined.
+    const seated = mine(seed.passengers).filter((p) => p.carId !== null);
+    const manager = mine(seed.users).find((u) => u.role === 'manager');
+    if (seated.length) {
+      await db.carAssignment.createMany({
+        data: seated.map((p) => ({
+          companyId: company.id, passengerId: p.id, fromCarId: null, toCarId: p.carId, byUserId: manager?.id ?? null, at: at(p.joinDate),
+        })),
+      });
+    }
+
     const payments = mine(seed.payments);
     if (payments.length) {
       await db.payment.createMany({
