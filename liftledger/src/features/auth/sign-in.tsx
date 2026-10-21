@@ -173,9 +173,9 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
               );
             })}
         </div>
-        <Link href="/dev/kit" className="inline-flex min-h-11 items-center self-start text-sm font-medium text-brand-deep underline-offset-4 hover:underline dark:text-brand">
+        {/* <Link href="/dev/kit" className="inline-flex min-h-11 items-center self-start text-sm font-medium text-brand-deep underline-offset-4 hover:underline dark:text-brand">
           {t('kit')}
-        </Link>
+        </Link> */}
       </Card>
     </main>
   );
