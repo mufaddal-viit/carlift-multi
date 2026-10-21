@@ -11,8 +11,11 @@ export function formatMoney(amount: number, locale: Locale): string {
 
 export function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '');
-  const m = digits.match(/^971(\d{2})(\d{3})(\d{4})$/);
-  return m ? `+971 ${m[1]} ${m[2]} ${m[3]}` : `+${digits}`;
+  const mobile = digits.match(/^971(5\d)(\d{3})(\d{4})$/);
+  if (mobile) return `+971 ${mobile[1]} ${mobile[2]} ${mobile[3]}`;
+  // Landlines have a one-digit area code: 04 300 1000 is +971 4 300 1000.
+  const landline = digits.match(/^971([2-9])(\d{3})(\d{4})$/);
+  return landline ? `+971 ${landline[1]} ${landline[2]} ${landline[3]}` : `+${digits}`;
 }
 
 export const formatMonth = (month: string, locale: Locale): string =>
@@ -29,3 +32,6 @@ export const waLink = (phone: string, message: string): string =>
 
 export const initials = (name: string): string =>
   name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+
+/** A receipt number as printed: 123 → "R-000123". */
+export const formatReceipt = (receiptNo: number): string => `R-${String(receiptNo).padStart(6, '0')}`;

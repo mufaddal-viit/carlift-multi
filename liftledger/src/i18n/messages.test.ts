@@ -12,7 +12,8 @@ const flat = (t: Tree, prefix = ''): Record<string, string> =>
 
 const E = flat(en as Tree);
 const A = flat(ar as Tree);
-const placeholders = (s: string) => (s.match(/\{(\w+)/g) ?? []).sort();
+// A placeholder is {name} or {count, plural, ...}; plural wording such as {nobody owes} is not one.
+const placeholders = (s: string) => (s.match(/\{\w+(?=[,}])/g) ?? []).sort();
 
 describe('translations', () => {
   it('English and Arabic define exactly the same keys', () => expect(Object.keys(A).sort()).toEqual(Object.keys(E).sort()));

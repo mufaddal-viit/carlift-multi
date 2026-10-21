@@ -3,6 +3,9 @@ import { sessionFor } from '@/core/auth/server';
 import { SessionProvider } from '@/data/hooks';
 import { redirect } from '@/i18n/navigation';
 
+/** Company data is private: search engines must not index the portal. */
+export const metadata = { robots: { index: false, follow: false } };
+
 type Props = { children: React.ReactNode; params: Promise<{ locale: string; company: string }> };
 
 export default async function ManagerLayout({ children, params }: Props) {

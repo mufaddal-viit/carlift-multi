@@ -75,7 +75,9 @@ const PRIVATE = {
   assignments: z.tuple([id]),
   payments: z.union([z.tuple([]), z.tuple([month.optional()])]),
   logPayment: z.tuple([paymentInput]),
-  deletePayment: z.tuple([id]),
+  paymentLedger: z.tuple([month]),
+  voidPayment: z.tuple([id, z.string().max(300)]),
+  receipt: z.tuple([id]),
   trips: z.tuple([date]),
   markTrips: z.tuple([date, marks]),
   statusBoard: z.tuple([month]),
@@ -85,7 +87,7 @@ const PRIVATE = {
 /** Error codes the repository throws on purpose, and the HTTP status each one gets. */
 const STATUS: Record<string, number> = {
   'invalid-input': 400, 'invalid-phone': 400, 'unauthenticated': 401, 'forbidden': 403, 'not-found': 404, 'duplicate-phone': 409,
-  'car-full': 409, 'car-inactive': 409, 'passenger-inactive': 409,
+  'car-full': 409, 'car-inactive': 409, 'passenger-inactive': 409, 'already-voided': 409,
 };
 
 const error = (code: string) => NextResponse.json({ error: code }, { status: STATUS[code] ?? 500 });

@@ -32,6 +32,7 @@ export async function seedDatabase(client: PrismaClient, today: string, { reset 
     data: seed.companies.map((c) => ({
       id: c.id, slug: c.slug, name: c.name, tradeLicense: c.tradeLicense ?? null, city: c.city, phone: c.phone,
       planId: c.planId, status: c.status, dueDay: c.dueDay, currency: c.currency, createdAt: at(c.createdAt),
+      receiptSeq: seed.payments.filter((x) => x.companyId === c.id).length,
     })),
   });
 
@@ -84,7 +85,7 @@ export async function seedDatabase(client: PrismaClient, today: string, { reset 
       await db.payment.createMany({
         data: payments.map((x) => ({
           companyId: company.id, id: x.id, passengerId: x.passengerId, amount: x.amount, date: x.date, method: x.method, forMonth: x.forMonth,
-          note: x.note ?? null, loggedByUserId: x.loggedByUserId, createdAt: at(x.createdAt),
+          note: x.note ?? null, loggedByUserId: x.loggedByUserId, receiptNo: x.receiptNo, voided: false, createdAt: at(x.createdAt),
         })),
       });
     }

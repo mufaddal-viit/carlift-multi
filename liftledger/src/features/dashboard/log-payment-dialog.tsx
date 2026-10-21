@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { addMonths, monthOf } from '@/core/billing';
 import { todayInDubai } from '@/core/clock';
-import { formatMoney, formatMonth } from '@/core/format';
+import { formatMoney, formatMonth, formatReceipt } from '@/core/format';
 import type { Locale, PayMethod } from '@/core/repo/types';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
@@ -30,26 +30,36 @@ export function LogPaymentDialog({
   open,
   onOpenChange,
   passengerId,
+  forMonth: startMonth,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   passengerId?: string;
+  /** The month the payment counts towards; this month when not given. */
+  forMonth?: string;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const today = todayInDubai();
   const thisMonth = monthOf(today);
-  const board = useStatusBoard(thisMonth);
+  const initialMonth = startMonth ?? thisMonth;
   const save = useLogPayment();
 
-  // Passengers who owe the most come first: they are the likeliest to be paying.
-  const allPassengers = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
-
   const { register, handleSubmit, control, setValue, reset, formState } = useForm<FormValues>({
-    defaultValues: { passengerId: passengerId ?? '', search: '', amount: '', date: today, method: 'cash', forMonth: thisMonth, note: '' },
+    defaultValues: { passengerId: passengerId ?? '', search: '', amount: '', date: today, method: 'cash', forMonth: initialMonth, note: '' },
   });
   const { errors } = formState;
   const [chosenId, forMonth, searchQuery] = useWatch({ control, name: ['passengerId', 'forMonth', 'search'] });
+  // Balances are for the month the payment counts towards.
+  const board = useStatusBoard(forMonth || initialMonth);
+  // A year back to three ahead, the range the server accepts, plus the month asked for.
+  const months = useMemo(
+    () => [...new Set([...[-12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3].map((n) => addMonths(thisMonth, n)), initialMonth])].sort().reverse(),
+    [thisMonth, initialMonth],
+  );
+
+  // Passengers who owe the most come first: they are the likeliest to be paying.
+  const allPassengers = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
 
   // Filter passengers by search query (name or employer name)
   const passengers = useMemo(() => {
@@ -61,7 +71,14 @@ export function LogPaymentDialog({
   }, [allPassengers, searchQuery]);
 
   const chosen = passengers.find((r) => r.passenger.id === chosenId);
-  const owes = chosen && forMonth === thisMonth && chosen.ledger.balance > 0 ? chosen.ledger.balance : 0;
+  // Opened for one passenger ("Record" on the due list): start with what they owe.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || !passengerId || !chosen) return;
+    prefilled.current = true;
+    if (chosen.ledger.balance > 0) setValue('amount', String(chosen.ledger.balance));
+  }, [chosen, passengerId, setValue]);
+  const owes = chosen && chosen.ledger.balance > 0 ? chosen.ledger.balance : 0;
 
   const close = (next: boolean) => {
     if (!next) reset();
@@ -72,11 +89,11 @@ export function LogPaymentDialog({
     const name = passengers.find((r) => r.passenger.id === v.passengerId)?.passenger.name ?? '';
     const amount = Number(v.amount);
     try {
-      await save.mutateAsync({
+      const made = await save.mutateAsync({
         passengerId: v.passengerId, amount, date: v.date, method: v.method, forMonth: v.forMonth,
         ...(v.note.trim() ? { note: v.note.trim() } : {}),
       });
-      toast.success(t('payment.saved', { amount: formatMoney(amount, locale), name }));
+      toast.success(t('payment.saved', { amount: formatMoney(amount, locale), name, receipt: formatReceipt(made.receiptNo) }));
       close(false);
     } catch {
       toast.error(t('payment.failed'));
@@ -156,14 +173,11 @@ export function LogPaymentDialog({
 
         <Field label={t('payment.forMonth')}>
           <Select {...register('forMonth')}>
-            {[-1, 0, 1].map((n) => {
-              const m = addMonths(thisMonth, n);
-              return (
-                <option key={m} value={m}>
-                  {formatMonth(m, locale)}
-                </option>
-              );
-            })}
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {formatMonth(m, locale)}
+              </option>
+            ))}
           </Select>
         </Field>
 

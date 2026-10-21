@@ -11,9 +11,10 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "postinstall": "prisma generate",
-    "db:push": "tsx scripts/db-setup.mts && node scripts/prisma.mjs db push",
+    "db:push": "tsx scripts/db-setup.mts && tsx scripts/migrate.mts && node scripts/prisma.mjs db push",
     "db:seed": "tsx scripts/seed.mts",
-    "db:check": "tsx scripts/db-check.mts"
+    "db:check": "tsx scripts/db-check.mts",
+    "db:migrate": "tsx scripts/migrate.mts"
   },
   "dependencies": {
     "@prisma/client": "6.19",

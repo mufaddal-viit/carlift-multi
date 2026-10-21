@@ -9,7 +9,7 @@ export const pax = (o: Partial<Passenger> = {}): Passenger => ({
 
 export const pay = (amount: number, forMonth: string, o: Partial<Payment> = {}): Payment => ({
   id: `pay-${amount}-${forMonth}`, companyId: 'c1', passengerId: 'p1', amount, date: `${forMonth}-03`,
-  method: 'cash', forMonth, loggedByUserId: 'u1', createdAt: `${forMonth}-03`, ...o,
+  method: 'cash', forMonth, loggedByUserId: 'u1', receiptNo: 1, voided: false, createdAt: `${forMonth}-03`, ...o,
 });
 
 export const trip = (date: string, status: Trip['status'] = 'travelled', passengerId = 'p1'): Trip =>

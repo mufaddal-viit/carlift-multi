@@ -109,10 +109,10 @@ describe('payments', () => {
     await repo.logPayment(manager, { passengerId: row.passenger.id, amount: 40, date: TODAY, method: 'wallet', forMonth: MONTH });
     expect((await repo.dashboard(manager, MONTH)).summary.collected).toBe(before.summary.collected + 40);
   });
-  it('deleting a payment restores the previous balance', async () => {
+  it('voiding a payment restores the previous balance', async () => {
     const row = (await repo.statusBoard(manager, MONTH)).find((r) => r.ledger.balance > 0)!;
     const p = await repo.logPayment(manager, { passengerId: row.passenger.id, amount: 10, date: TODAY, method: 'cash', forMonth: MONTH });
-    await repo.deletePayment(manager, p.id);
+    await repo.voidPayment(manager, p.id, 'Entered twice');
     expect((await repo.statusBoard(manager, MONTH)).find((r) => r.passenger.id === row.passenger.id)!.ledger.balance).toBe(row.ledger.balance);
   });
   it.each([[0], [-5], [12.5], [Number.NaN]])('rejects an amount of %s', async (amount) => {

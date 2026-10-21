@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/shell/manager-shell';
 import { Card } from '@/components/ui/card';
 import { PassengersPage } from '@/features/passengers/passengers-page';
 
-const SECTIONS = ['fleet', 'passengers', 'payments', 'attendance', 'reminders', 'settings'] as const;
+const SECTIONS = ['fleet', 'passengers', 'attendance', 'reminders', 'settings'] as const;
 type Section = (typeof SECTIONS)[number];
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string[] }> }) {

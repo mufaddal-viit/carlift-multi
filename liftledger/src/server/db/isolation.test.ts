@@ -55,9 +55,11 @@ describe('the repository, acting as company A', () => {
     expect(repo.logPayment(managerA, { passengerId: ids.passenger, amount: 5, date: TODAY, method: 'cash', forMonth: MONTH }))
       .rejects.toThrow('not-found'));
 
-  it("cannot delete company B's payment", async () => {
-    await expect(repo.deletePayment(managerA, ids.payment)).rejects.toThrow('not-found');
-    expect(await client.payment.findUnique({ where: { id: ids.payment } })).not.toBeNull();
+  it("cannot void or open a receipt of company B's payment", async () => {
+    await expect(repo.voidPayment(managerA, ids.payment, 'Not ours')).rejects.toThrow('not-found');
+    await expect(repo.receipt(managerA, ids.payment)).rejects.toThrow('not-found');
+    expect(await client.payment.findUnique({ where: { id: ids.payment } })).toMatchObject({ voided: false });
+    expect((await repo.paymentLedger(managerA, MONTH)).every((x) => x.companyId === A)).toBe(true);
   });
 
   it("cannot edit, deactivate or mark trips for company B's passenger", async () => {

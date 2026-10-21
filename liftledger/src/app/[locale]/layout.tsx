@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Providers } from '@/components/providers';
+import { siteUrl } from '@/core/site';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -33,7 +34,15 @@ export async function generateMetadata({ params }: Pick<Props, 'params'>): Promi
     locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
     namespace: 'common',
   });
-  return { title: { default: t('appName'), template: `%s · ${t('appName')}` }, description: t('tagline') };
+  return {
+    metadataBase: siteUrl(),
+    title: { default: t('appName'), template: `%s · ${t('appName')}` },
+    description: t('tagline'),
+    applicationName: t('appName'),
+    appleWebApp: { capable: true, title: t('appName'), statusBarStyle: 'default' },
+    formatDetection: { telephone: false },
+    openGraph: { type: 'website', siteName: t('appName'), locale: locale === 'ar' ? 'ar_AE' : 'en_AE' },
+  };
 }
 
 export default async function LocaleLayout({ children, params }: Props) {

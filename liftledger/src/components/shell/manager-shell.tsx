@@ -29,7 +29,7 @@ const NAV: { key: NavKey; href: string; icon: LucideIcon }[] = [
 /** Both paths are full company addresses; the dashboard only matches itself, other sections match their sub-pages too. */
 const isActive = (pathname: string, href: string) => (href.endsWith('/app') ? pathname === href : pathname.startsWith(href));
 
-const PaymentDialogContext = createContext<(passengerId?: string) => void>(() => {});
+const PaymentDialogContext = createContext<(passengerId?: string, forMonth?: string) => void>(() => {});
 /** Opens the "log a payment" dialog from anywhere in the manager portal, optionally for one passenger. */
 export const useOpenPayment = () => useContext(PaymentDialogContext);
 
@@ -49,7 +49,7 @@ function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 -mx-gutter box-content h-14 bg-card/95 px-gutter pt-[env(safe-area-inset-top)] shadow-[0_1px_0_0_var(--line)] backdrop-blur-md">
+    <header className="sticky top-0 z-30 -mx-gutter box-content h-14 print:hidden bg-card/95 px-gutter pt-[env(safe-area-inset-top)] shadow-[0_1px_0_0_var(--line)] backdrop-blur-md">
       <div className="mx-auto flex h-full w-full max-w-[1400px] items-center justify-between gap-3">
       <Link href={to('/app')} aria-label={t('common.appName')} className="inline-flex min-h-11 items-center rounded-md outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
         <Logo wordmark={false} className="sm:hidden" />
@@ -137,7 +137,7 @@ function IconRail({ onLogPayment }: { onLogPayment: () => void }) {
   const to = useTenantPath();
   const capsule = 'flex flex-col gap-1.5 rounded-md bg-card p-1.5';
   return (
-    <aside aria-label={t('quickActions')} className="fixed start-4 top-20 bottom-6 z-20 hidden flex-col justify-between lg:flex 2xl:start-[max(1rem,calc((100vw-1400px)/2-4.5rem))]">
+    <aside aria-label={t('quickActions')} className="print:hidden fixed start-4 top-20 bottom-6 z-20 hidden flex-col justify-between lg:flex 2xl:start-[max(1rem,calc((100vw-1400px)/2-4.5rem))]">
       <div className="flex flex-col gap-3">
         <div className={capsule}>
           <button
@@ -170,7 +170,7 @@ function BottomTabs() {
   return (
     <nav
       aria-label={t('main')}
-      className="fixed inset-x-0 bottom-0 z-30 flex bg-card/95 px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-[0_-1px_0_0_var(--line)] backdrop-blur-md lg:hidden"
+      className="print:hidden fixed inset-x-0 bottom-0 z-30 flex bg-card/95 px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-[0_-1px_0_0_var(--line)] backdrop-blur-md lg:hidden"
     >
       {NAV.map((item) => {
         const active = isActive(pathname, to(item.href));
@@ -196,8 +196,8 @@ function BottomTabs() {
 
 export function ManagerShell({ children }: { children: ReactNode }) {
   const t = useTranslations('common');
-  const [payment, setPayment] = useState<{ open: boolean; passengerId?: string }>({ open: false });
-  const openPayment = (passengerId?: string) => setPayment({ open: true, passengerId });
+  const [payment, setPayment] = useState<{ open: boolean; passengerId?: string; forMonth?: string }>({ open: false });
+  const openPayment = (passengerId?: string, forMonth?: string) => setPayment({ open: true, passengerId, forMonth });
 
   return (
     <PaymentDialogContext.Provider value={openPayment}>
@@ -213,10 +213,11 @@ export function ManagerShell({ children }: { children: ReactNode }) {
         <BottomTabs />
       </div>
       <LogPaymentDialog
-        key={payment.passengerId ?? 'any'}
+        key={`${payment.passengerId ?? 'any'}-${payment.forMonth ?? 'now'}`}
         open={payment.open}
         onOpenChange={(open) => setPayment((p) => ({ ...p, open }))}
         passengerId={payment.passengerId}
+        forMonth={payment.forMonth}
       />
     </PaymentDialogContext.Provider>
   );

@@ -109,7 +109,7 @@ export function buildSeed(today: string): Db {
     const safeDate = date > today ? today : date < p.joinDate ? p.joinDate : date;
     payments.push({
       id: `pay-${payments.length + 1}`, companyId: p.companyId, passengerId: p.id, amount, date: safeDate,
-      method: method(), forMonth, loggedByUserId: by, createdAt: `${safeDate}T08:00:00.000Z`, ...(note ? { note } : {}),
+      method: method(), forMonth, loggedByUserId: by, receiptNo: 0, voided: false, createdAt: `${safeDate}T08:00:00.000Z`, ...(note ? { note } : {}),
     });
   };
 
@@ -239,6 +239,12 @@ export function buildSeed(today: string): Db {
       if (rnd() < 0.6) addPayment(p, p.monthlyFee, `${month}-${pad(Math.min(todayDay, 3))}`, month, `u-mgr-${short}`);
     }
   });
+
+  // Receipt numbers run in the order money came in, per company.
+  for (const company of companies) {
+    const own = payments.filter((x) => x.companyId === company.id).sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+    own.forEach((x, i) => (x.receiptNo = i + 1));
+  }
 
   return { version: DB_VERSION, seedMonth: month, plans: PLANS, companies, users, cars, drivers, passengers, payments, trips };
 }

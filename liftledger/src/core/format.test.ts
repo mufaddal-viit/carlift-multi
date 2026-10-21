@@ -13,6 +13,7 @@ describe('formatMoney', () => {
 
 describe('formatPhone', () => {
   it('groups a UAE mobile number', () => expect(formatPhone('971504412011')).toBe('+971 50 441 2011'));
+  it('groups a UAE landline with its one-digit area code', () => expect(formatPhone('97143001000')).toBe('+971 4 300 1000'));
   it('leaves an unexpected number readable instead of mangling it', () => expect(formatPhone('12345')).toBe('+12345'));
 });
 

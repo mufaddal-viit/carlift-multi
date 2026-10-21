@@ -87,6 +87,8 @@ model Company {
   status       CompanyStatus @default(trial)
   /// Day of the month monthly fees fall due.
   dueDay       Int           @default(5)
+  /// The last receipt number given out; incremented atomically for each payment.
+  receiptSeq   Int           @default(0)
   currency     String        @default("AED")
   createdAt    DateTime      @default(now())
 
@@ -190,8 +192,16 @@ model Payment {
   forMonth       String
   note           String?
   loggedByUserId String
+  /// Sequential within the company, shown as R-000123. Never reused.
+  receiptNo      Int
+  /// Payments are voided, never deleted: the record stays for audit and drops out of every total.
+  voided         Boolean   @default(false)
+  voidedAt       DateTime?
+  voidedByUserId String?
+  voidReason     String?
   createdAt      DateTime  @default(now())
 
+  @@unique([companyId, receiptNo])
   @@index([companyId, forMonth])
   @@index([companyId, passengerId])
   @@map("payments")

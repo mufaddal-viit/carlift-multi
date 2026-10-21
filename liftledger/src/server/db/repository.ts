@@ -3,15 +3,15 @@ import { addMonths, companySummary, statusFor } from '@/core/billing';
 import { todayInDubai } from '@/core/clock';
 import { canWrite, visibleCars, visiblePassengers, type WriteAction } from '@/core/repo/scope';
 import type {
-  Car, CarAssignment, Company, Db, Driver, FleetCar, Passenger, PassengerInput, Payment, PublicCompany, Repository, Session, StatusRow,
-  Trip, User,
+  Car, CarAssignment, Company, Db, Driver, FleetCar, Passenger, PassengerInput, Payment, PaymentEntry, PublicCompany, Receipt, Repository,
+  Session, StatusRow, Trip, User,
 } from '@/core/repo/types';
 import { DUMMY_HASH, verifyPassword } from './password';
 import { forCompany, type CompanyDb } from './tenant';
 
 export type RepoError =
   | 'not-found' | 'forbidden' | 'invalid-input' | 'invalid-credentials' | 'company-suspended' | 'duplicate-phone' | 'invalid-phone'
-  | 'car-full' | 'car-inactive' | 'passenger-inactive';
+  | 'car-full' | 'car-inactive' | 'passenger-inactive' | 'already-voided';
 
 export const fail = (code: RepoError) => new Error(code);
 
@@ -50,7 +50,9 @@ const toPassenger = (p: Prisma.PassengerGetPayload<object>): Passenger => ({
 });
 const toPayment = (x: Prisma.PaymentGetPayload<object>): Payment => ({
   id: x.id, companyId: x.companyId, passengerId: x.passengerId, amount: x.amount, date: x.date, method: x.method,
-  forMonth: x.forMonth, note: opt(x.note), loggedByUserId: x.loggedByUserId, createdAt: iso(x.createdAt),
+  forMonth: x.forMonth, note: opt(x.note), loggedByUserId: x.loggedByUserId, receiptNo: x.receiptNo, voided: x.voided,
+  voidedAt: x.voidedAt ? iso(x.voidedAt) : undefined, voidedByUserId: opt(x.voidedByUserId), voidReason: opt(x.voidReason),
+  createdAt: iso(x.createdAt),
 });
 const toTrip = (t: Prisma.TripGetPayload<object>): Trip => ({
   id: t.id, companyId: t.companyId, passengerId: t.passengerId, date: t.date, status: t.status,
@@ -145,7 +147,7 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       c.db.car.findMany({ orderBy: { plate: 'asc' } }),
       c.db.driver.findMany({ orderBy: { name: 'asc' } }),
       c.db.passenger.findMany({ orderBy: { name: 'asc' } }),
-      fromMonth ? c.db.payment.findMany({ where: { forMonth: { gte: fromMonth } } }) : [],
+      fromMonth ? c.db.payment.findMany({ where: { forMonth: { gte: fromMonth }, voided: false } }) : [],
       fromMonth ? c.db.trip.findMany({ where: { date: { gte: `${fromMonth}-01` } } }) : [],
     ]);
     return {
@@ -164,6 +166,29 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
   const allow = (s: Session, d: Db, action: WriteAction, p: Pick<Passenger, 'companyId' | 'carId'>) => {
     if (!canWrite(s, action, p, d)) throw fail('forbidden');
   };
+
+  /** Payments with passenger and staff names, for lists and receipts. */
+  async function entries(c: Ctx, d: Db, rows: Prisma.PaymentGetPayload<object>[]): Promise<PaymentEntry[]> {
+    const people = new Map(d.passengers.map((p) => [p.id, p]));
+    const staffIds = [...new Set(rows.flatMap((r) => [r.loggedByUserId, r.voidedByUserId]).filter((x): x is string => !!x))];
+    const staff = await c.db.user.findMany({ where: { id: { in: staffIds } }, select: { id: true, name: true } });
+    const names = new Map(staff.map((u) => [u.id, u.name]));
+    return rows.map((r) => {
+      const p = people.get(r.passengerId);
+      return {
+        ...toPayment(r),
+        passengerName: p?.name ?? '', employerName: p?.employerName ?? '', passengerPhone: p?.phone ?? '',
+        loggedByName: names.get(r.loggedByUserId) ?? null, voidedByName: r.voidedByUserId ? (names.get(r.voidedByUserId) ?? null) : null,
+      };
+    });
+  }
+
+  /** A payment the signed-in user may see: its passenger must be visible to them. */
+  async function visiblePayment(s: Session, c: Ctx, d: Db, id: string) {
+    const row = await c.db.payment.findFirst({ where: { id } });
+    if (!row || !visiblePassengers(s, d).some((p) => p.id === row.passengerId)) throw fail('not-found');
+    return row;
+  }
 
   const board = (s: Session, d: Db, month: string): StatusRow[] =>
     visiblePassengers(s, d)
@@ -319,10 +344,48 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       const d = await slice(c, null);
       const ids = visiblePassengers(s, d).map((p) => p.id);
       const rows = await c.db.payment.findMany({
-        where: { passengerId: { in: ids }, ...(month ? { forMonth: month } : {}) },
+        where: { passengerId: { in: ids }, voided: false, ...(month ? { forMonth: month } : {}) },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       });
       return rows.map(toPayment);
+    },
+
+    async paymentLedger(s, month) {
+      if (!MONTH.test(month)) throw fail('invalid-input');
+      const c = await ctx(s);
+      const d = await slice(c, null);
+      const ids = visiblePassengers(s, d).map((p) => p.id);
+      const rows = await c.db.payment.findMany({
+        where: { passengerId: { in: ids }, forMonth: month },
+        orderBy: [{ date: 'desc' }, { receiptNo: 'desc' }],
+      });
+      return entries(c, d, rows);
+    },
+
+    async voidPayment(s, id, reason) {
+      const c = await ctx(s);
+      if (c.actor.role !== 'manager') throw fail('forbidden');
+      const why = reason.trim();
+      if (why.length < 3 || why.length > 200) throw fail('invalid-input');
+      const d = await slice(c, null);
+      const row = await visiblePayment(s, c, d, id);
+      if (row.voided) throw fail('already-voided');
+      // Only an unvoided payment is changed, so two managers voiding at once cannot both succeed.
+      const { count } = await c.db.payment.updateMany({
+        where: { id, voided: false },
+        data: { voided: true, voidedAt: new Date(), voidedByUserId: s.userId, voidReason: why },
+      });
+      if (count === 0) throw fail('already-voided');
+      const [entry] = await entries(c, d, [await c.db.payment.findFirstOrThrow({ where: { id } })]);
+      return entry;
+    },
+
+    async receipt(s, id) {
+      const c = await ctx(s);
+      const d = await slice(c, null);
+      const [payment] = await entries(c, d, [await visiblePayment(s, c, d, id)]);
+      const { name, phone, city, tradeLicense } = c.company;
+      return { payment, company: { name, phone, city, tradeLicense } };
     },
 
     async logPayment(s, input) {
@@ -331,23 +394,21 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       const p = seen(s, d, input.passengerId);
       allow(s, d, 'payment', p);
       const validAmount = Number.isInteger(input.amount) && input.amount > 0 && input.amount <= 1_000_000;
-      if (!validAmount || !MONTH.test(input.forMonth) || !DATE.test(input.date)) throw fail('invalid-input');
+      const thisMonth = today().slice(0, 7);
+      // Money cannot arrive in the future, and a payment counts towards a month within the last year or the next three.
+      const validMonth = MONTH.test(input.forMonth) && input.forMonth >= addMonths(thisMonth, -12) && input.forMonth <= addMonths(thisMonth, 3);
+      if (!validAmount || !validMonth || !DATE.test(input.date) || input.date > today()) throw fail('invalid-input');
+      // An atomic increment on the company hands out the next receipt number, so two payments never share one.
+      const { receiptSeq } = await client.company.update({
+        where: { id: c.company.id }, data: { receiptSeq: { increment: 1 } }, select: { receiptSeq: true },
+      });
       const row = await c.db.payment.create({
         data: {
           companyId: c.company.id, passengerId: p.id, amount: input.amount, date: input.date, method: input.method,
-          forMonth: input.forMonth, note: input.note?.trim() || null, loggedByUserId: s.userId,
+          forMonth: input.forMonth, note: input.note?.trim() || null, loggedByUserId: s.userId, receiptNo: receiptSeq,
         },
       });
       return toPayment(row);
-    },
-
-    async deletePayment(s, id) {
-      const c = await ctx(s);
-      const payment = await c.db.payment.findFirst({ where: { id } });
-      if (!payment) throw fail('not-found');
-      seen(s, await slice(c, null), payment.passengerId);
-      if (s.role !== 'manager') throw fail('forbidden');
-      await c.db.payment.delete({ where: { id } });
     },
 
     async trips(s, date) {
@@ -389,7 +450,7 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       const names = new Map(people.map((p) => [p.id, p.name]));
       const rows = board(s, d, month);
       const recent = await c.db.payment.findMany({
-        where: { passengerId: { in: [...names.keys()] } },
+        where: { passengerId: { in: [...names.keys()] }, voided: false },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         take: 8,
       });

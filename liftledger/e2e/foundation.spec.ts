@@ -220,8 +220,8 @@ test('dark theme follows the device setting', async ({ page }) => {
 
 test('a section that is not built yet says so instead of breaking', async ({ page }) => {
   await signIn(page, 'manager');
-  await page.goto(`/en/${AMAD}/app/payments`);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payments');
+  await page.goto(`/en/${AMAD}/app/fleet`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Fleet');
   await expect(page.getByText('arrives in the next build')).toBeVisible();
 });
 
@@ -290,4 +290,126 @@ test('a passenger taken out of their car is listed as waiting until given one', 
   await page.getByRole('dialog').getByTestId('assign-save').click();
   await expect(page.getByText(`${name} now rides in D 67890.`)).toBeVisible();
   await expect(page.getByRole('link', { name: new RegExp(`^${name}`) })).toHaveCount(0);
+});
+
+// ---- Payments ---------------------------------------------------------------------
+
+test('a payment goes from the payments page to a receipt, and can be voided with a reason', async ({ page }) => {
+  await signIn(page, 'manager');
+  await page.goto(`/en/${AMAD}/app/payments`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payments');
+  await expect(page.getByTestId('payments-summary')).toContainText('Collected');
+
+  // Log a small payment from the page.
+  await page.getByTestId('payments-log').click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Passenger', { exact: true }).selectOption({ index: 1 });
+  await dialog.getByLabel('Amount (AED)').fill('7');
+  const note = `e2e ${test.info().project.name} ${Date.now()}`;
+  await dialog.getByLabel('Note (optional)').fill(note);
+  await dialog.getByRole('button', { name: 'Save payment' }).click();
+  const toastText = await page.getByText(/Payment of AED 7 logged for .* · R-\d{6}/).innerText();
+  const receipt = toastText.match(/R-(\d{6})/)![0];
+  const receiptNo = Number(receipt.slice(2));
+
+  // Find it by its receipt number and open it.
+  await page.getByRole('searchbox', { name: /Search name/ }).fill(receipt);
+  await expect(page.getByTestId('payment-list').getByRole('button')).toHaveCount(1);
+  await page.getByTestId(`payment-${receiptNo}`).click();
+  const sheet = page.getByTestId('payment-sheet');
+  await expect(sheet).toContainText('AED 7');
+  await expect(sheet).toContainText(note);
+  await expect(sheet).toContainText('Amad');
+  await shot(page, 'payment-sheet');
+
+  // The printable receipt.
+  await sheet.getByTestId('sheet-receipt').click();
+  await expect(page.getByTestId('receipt-number')).toHaveText(receipt);
+  await expect(page.getByTestId('receipt-amount')).toHaveText('AED 7');
+  await expect(page.getByTestId('receipt')).toContainText('Amad Express');
+  await expect(page.getByTestId('receipt-print')).toBeVisible();
+  await shot(page, 'receipt');
+
+  // Void it: a reason is required, and it then shows as voided everywhere.
+  await page.goBack();
+  await page.getByTestId('sheet-void').click();
+  await page.getByTestId('void-confirm').click();
+  await expect(page.getByText('Write a short reason')).toBeVisible();
+  await page.getByTestId('void-reason').fill('Logged by the e2e test');
+  await page.getByTestId('void-confirm').click();
+  await expect(page.getByText(`Receipt ${receipt} voided.`)).toBeVisible();
+  await expect(page.getByTestId('void-banner')).toContainText('Logged by the e2e test');
+  await page.keyboard.press('Escape');
+
+  await expect(page.getByTestId(`payment-${receiptNo}`)).toHaveCount(0); // No longer among the received payments.
+  await page.getByTestId('tab-voided').click();
+  await expect(page.getByTestId(`payment-${receiptNo}`)).toContainText('Logged by the e2e test');
+});
+
+test('the due list offers a WhatsApp reminder and records a payment with the balance filled in', async ({ page }) => {
+  await signIn(page, 'manager');
+  await page.goto(`/en/${AMAD}/app/payments`);
+  await page.getByTestId('tab-due').click();
+  const first = page.getByTestId('due-list').getByRole('listitem').first();
+  await expect(first).toBeVisible();
+  const reminder = first.getByRole('link', { name: /Send .* a WhatsApp reminder/ });
+  await expect(reminder).toHaveAttribute('href', /^https:\/\/wa\.me\/9715\d{8}\?text=Hello%20/);
+  const due = Number((await first.getByTestId('due-amount').innerText()).replace(/[^\d]/g, ''));
+
+  await first.getByRole('button', { name: /Record a payment from/ }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Amount (AED)')).toHaveValue(String(due));
+  await shot(page, 'payments-due');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('payments can be read month by month and exported', async ({ page }) => {
+  await signIn(page, 'manager');
+  await page.goto(`/en/${AMAD}/app/payments`);
+  await expect(page.getByTestId('payment-list')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Previous month' }).click();
+  await expect(page).toHaveURL(/\?month=\d{4}-\d{2}$/);
+  const month = new URL(page.url()).searchParams.get('month')!;
+  await expect(page.getByTestId('payment-list')).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByTestId('payments-export').click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`amad-express-payments-${month}.csv`);
+  const csv = await (await import('node:fs/promises')).readFile((await file.path())!, 'utf8');
+  expect(csv.replace(/^\uFEFF/, '').split('\r\n')[0]).toBe(
+    'Receipt,Date received,Passenger,Company,Phone,Amount (AED),Method,For month,Note,Logged by,Status,Void reason',
+  );
+  expect(csv).toMatch(/\r\nR-\d{6},\d{4}-\d{2}-\d{2},/);
+});
+
+test('a receipt from another company, or one that does not exist, says not found', async ({ page }) => {
+  await signIn(page, 'manager');
+  await page.goto(`/en/${AMAD}/app/payments/pay-does-not-exist`);
+  await expect(page.getByTestId('receipt-not-found')).toContainText('Receipt not found');
+});
+
+// ---- Icons and link previews ------------------------------------------------------
+
+test('the site has its own icons, an install manifest and link previews', async ({ page, request }) => {
+  const ico = await request.get('/favicon.ico');
+  expect(ico.status()).toBe(200);
+  expect(ico.headers()['content-type']).toContain('icon');
+
+  const manifest = await request.get('/manifest.webmanifest');
+  expect(await manifest.json()).toMatchObject({ name: 'LiftLedger', display: 'standalone', theme_color: '#0F8A5F' });
+
+  await page.goto(`/en/${AMAD}/login`);
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
+
+  for (const path of ['/en/opengraph-image', `/en/${AMAD}/register/opengraph-image`]) {
+    const og = await request.get(path);
+    expect(og.status(), path).toBe(200);
+    expect(og.headers()['content-type'], path).toBe('image/png');
+  }
+  await page.goto(`/en/${AMAD}/register`);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /register\/opengraph-image/);
 });

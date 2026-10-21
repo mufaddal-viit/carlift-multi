@@ -91,7 +91,29 @@ export interface Payment {
   forMonth: string;
   note?: string;
   loggedByUserId: string;
+  /** Sequential within the company; shown as R-000123. */
+  receiptNo: number;
+  /** Voided payments stay on record but count towards nothing. */
+  voided: boolean;
+  voidedAt?: string;
+  voidedByUserId?: string;
+  voidReason?: string;
   createdAt: string;
+}
+
+/** A payment with the names a list or receipt shows next to it. */
+export interface PaymentEntry extends Payment {
+  passengerName: string;
+  employerName: string;
+  passengerPhone: string;
+  loggedByName: string | null;
+  voidedByName: string | null;
+}
+
+/** Everything a printed or shared receipt needs. */
+export interface Receipt {
+  payment: PaymentEntry;
+  company: Pick<Company, 'name' | 'phone' | 'city' | 'tradeLicense'>;
 }
 
 export interface Trip {
@@ -188,7 +210,12 @@ export interface Repository {
   assignments(s: Session, passengerId: string): Promise<CarAssignment[]>;
   payments(s: Session, month?: string): Promise<Payment[]>;
   logPayment(s: Session, input: PaymentInput): Promise<Payment>;
-  deletePayment(s: Session, id: string): Promise<void>;
+  /** A month's payments (by the month they pay for), voided ones included and flagged, newest first. */
+  paymentLedger(s: Session, month: string): Promise<PaymentEntry[]>;
+  /** Manager: void a payment with a reason. It stays on record and leaves every total. */
+  voidPayment(s: Session, id: string, reason: string): Promise<PaymentEntry>;
+  /** One payment's receipt. */
+  receipt(s: Session, id: string): Promise<Receipt>;
   trips(s: Session, date: string): Promise<Trip[]>;
   markTrips(s: Session, date: string, marks: { passengerId: string; status: Trip['status'] }[]): Promise<Trip[]>;
   statusBoard(s: Session, month: string): Promise<StatusRow[]>;

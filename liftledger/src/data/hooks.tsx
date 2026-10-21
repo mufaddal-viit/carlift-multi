@@ -28,7 +28,7 @@ export function useSession(): Session {
   return session;
 }
 
-const LIVE = ['dashboard', 'statusBoard', 'payments', 'trips', 'passengers', 'passenger', 'fleet', 'assignments'];
+const LIVE = ['dashboard', 'statusBoard', 'payments', 'paymentLedger', 'receipt', 'trips', 'passengers', 'passenger', 'fleet', 'assignments'];
 
 function useInvalidateLive() {
   const client = useQueryClient();
@@ -79,6 +79,30 @@ export function useLogPayment() {
   const s = useSession();
   const invalidate = useInvalidateLive();
   return useMutation({ mutationFn: (input: PaymentInput) => repo.logPayment(s, input), onSuccess: invalidate });
+}
+
+/** A month's payments with names, voided ones included. */
+export function usePaymentLedger(month: string) {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({
+    queryKey: ['paymentLedger', s.userId, month],
+    queryFn: () => repo.paymentLedger(s, month),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useVoidPayment() {
+  const repo = useRepo();
+  const s = useSession();
+  const invalidate = useInvalidateLive();
+  return useMutation({ mutationFn: (v: { id: string; reason: string }) => repo.voidPayment(s, v.id, v.reason), onSuccess: invalidate });
+}
+
+export function useReceipt(id: string) {
+  const repo = useRepo();
+  const s = useSession();
+  return useQuery({ queryKey: ['receipt', s.userId, id], queryFn: () => repo.receipt(s, id), retry: false });
 }
 
 export function useMarkTrips() {

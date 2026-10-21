@@ -19,4 +19,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 // The pattern is a string, so the dot that marks file requests (favicon.ico) needs a double backslash.
-export const config = { matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'] };
+// Link-preview images (/en/opengraph-image) have no dot in their address, so they are left out by name.
+export const config = { matcher: ['/((?!api|_next|_vercel|.*opengraph-image|.*\\..*).*)'] };
