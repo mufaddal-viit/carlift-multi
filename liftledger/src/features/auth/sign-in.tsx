@@ -73,19 +73,19 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-4 px-gutter pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex gap-2">
-          <LocaleToggle className="bg-card shadow-card" />
-          <ThemeToggle className="bg-card shadow-card" />
+          <LocaleToggle className="bg-card" />
+          <ThemeToggle className="bg-card" />
         </div>
       </header>
 
       <Card className="flex flex-col items-center gap-2 py-8 text-center">
         <Van title={t('title')} className="max-w-40" />
         <p className="mt-2 text-sm font-semibold text-brand-deep dark:text-brand">{t('title')}</p>
-        <h1 className="text-3xl font-medium tracking-tight" data-testid="login-company">
+        <h1 className="text-xl font-semibold tracking-tight" data-testid="login-company">
           {companyName ?? t('platform')}
         </h1>
         <p className="max-w-sm text-sm text-ink-muted">{companyName ? t('subtitle') : t('platformSubtitle')}</p>
@@ -120,7 +120,7 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? t('hidePassword') : t('showPassword')}
               aria-pressed={showPassword}
-              className="absolute end-1 bottom-1 grid size-10 place-items-center rounded-full text-ink-muted outline-none hover:text-ink focus-visible:outline-2 focus-visible:outline-brand"
+              className="absolute end-0.5 bottom-0.5 grid size-11 place-items-center rounded-full text-ink-muted outline-none hover:text-ink focus-visible:outline-2 focus-visible:outline-brand"
             >
               {showPassword ? <EyeOff className="size-5" aria-hidden /> : <Eye className="size-5" aria-hidden />}
             </button>
@@ -141,10 +141,10 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
 
       <Card className="flex flex-col gap-4">
         <div>
-          <h2 className="text-lg font-medium">{t('demoTitle')}</h2>
+          <h2 className="text-lg font-semibold">{t('demoTitle')}</h2>
           <p className="text-sm text-ink-muted">{t('demoHint', { password: DEMO_PASSWORD })}</p>
         </div>
-        {users.isPending && [0, 1, 2].map((i) => <Skeleton key={i} className="h-14 rounded-[18px]" />)}
+        {users.isPending && [0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}
         <div className="flex flex-col gap-2">
             {demoAccounts(users.data ?? []).map((u) => {
               const Icon = ICONS[u.role];
@@ -155,9 +155,9 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
                   onClick={() => fill(u)}
                   data-testid={`demo-${u.id}`}
                   aria-label={t('fillAs', { name: u.name })}
-                  className="group flex w-full items-center gap-3 rounded-[18px] bg-soft p-2.5 text-start transition-colors outline-none hover:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="group flex min-h-14 w-full items-center gap-3 rounded-md bg-soft p-2.5 text-start transition-colors outline-none hover:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
                     <Icon className="size-4" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -173,7 +173,7 @@ function SignInForm({ slug, companyName }: { slug: string | null; companyName?: 
               );
             })}
         </div>
-        <Link href="/dev/kit" className="text-sm font-medium text-brand-deep underline-offset-4 hover:underline dark:text-brand">
+        <Link href="/dev/kit" className="inline-flex min-h-11 items-center self-start text-sm font-medium text-brand-deep underline-offset-4 hover:underline dark:text-brand">
           {t('kit')}
         </Link>
       </Card>

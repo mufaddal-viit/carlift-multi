@@ -198,7 +198,7 @@
   },
   "passengers": {
     "title": "Passengers",
-    "searchPlaceholder": "Search by name or company...",
+    "searchPlaceholder": "Search name, company, car",
     "addPassenger": "Add passenger",
     "name": "Name",
     "employer": "Company",
@@ -215,7 +215,21 @@
     "all": "All",
     "noResults": "No passengers match your search.",
     "emptyTitle": "No passengers yet",
-    "emptyBody": "Add your first passenger or share the registration link."
+    "emptyBody": "Add your first passenger or share the registration link.",
+    "filters": "Filters",
+    "filterDue": "Due",
+    "filterInactive": "Inactive",
+    "noneDue": "No one has a balance due.",
+    "noneInactive": "No inactive passengers.",
+    "noneInGroup": "No passengers in this group.",
+    "seatShort": "S{n}",
+    "dueMarker": "Payment due",
+    "call": "Call {name}",
+    "callShort": "Call",
+    "whatsapp": "WhatsApp",
+    "details": "Details",
+    "thisMonth": "This month",
+    "fullStatement": "Full statement"
   },
   "soa": {
     "title": "Statement of Account",

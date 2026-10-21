@@ -13,7 +13,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export function Card({ tone = 'default', padded = true, className, ...props }: CardProps) {
-  return <div className={cn('rounded-card', tones[tone], padded && 'p-4 sm:p-6', className)} {...props} />;
+  return <div className={cn('rounded-card', tones[tone], padded && 'p-4', className)} {...props} />;
 }
 
 export function CardHeader({
@@ -39,7 +39,7 @@ export function CardHeader({
         )}
         <div className="min-w-0">
           <h2 className="truncate text-base leading-tight font-semibold">{title}</h2>
-          {subtitle && <p className="mt-0.5 truncate text-[13px] text-ink-muted">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 truncate text-sm text-ink-muted">{subtitle}</p>}
         </div>
       </div>
       {action}

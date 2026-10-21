@@ -57,13 +57,13 @@ export function Kit() {
           <Logo />
         </Link>
         <div className="flex gap-2">
-          <LocaleToggle className="bg-card shadow-card" />
-          <ThemeToggle className="bg-card shadow-card" />
+          <LocaleToggle className="bg-card" />
+          <ThemeToggle className="bg-card" />
         </div>
       </header>
 
       <Reveal className="py-4">
-        <h1 className="text-[2.75rem] leading-tight font-light tracking-tight">{t('kit.title')}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t('kit.title')}</h1>
         <p className="text-ink-muted">{t('kit.subtitle')}</p>
       </Reveal>
 
@@ -166,7 +166,7 @@ export function Kit() {
           {(Object.keys(illustrations) as (keyof typeof illustrations)[]).map((key) => {
             const Art = illustrations[key];
             return (
-              <li key={key} className="grid place-items-center rounded-[22px] bg-soft p-4">
+              <li key={key} className="grid place-items-center rounded-md bg-soft p-4">
                 <Art title={t(`illustrations.${key}`)} />
               </li>
             );
@@ -176,7 +176,7 @@ export function Kit() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title={t('kit.avatars')}>
-          <div className="rounded-[22px] bg-soft p-4">
+          <div className="rounded-md bg-soft p-4">
             <AvatarStack names={NAMES} moreLabel={(count) => t('common.more', { count })} />
           </div>
         </Section>
@@ -192,9 +192,9 @@ export function Kit() {
       <Section title={t('kit.photos')}>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {(Object.keys(images) as ImageKey[]).map((key) => (
-            <li key={key} className="relative aspect-[3/2] overflow-hidden rounded-[22px] bg-soft">
+            <li key={key} className="relative aspect-[3/2] overflow-hidden rounded-md bg-soft">
               <Image src={unsplashUrl(key, 640)} alt={images[key].alt[locale]} fill sizes="(min-width: 640px) 320px, 50vw" className="object-cover" />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-6 pb-2 text-[11px] text-white" dir="ltr">
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-6 pb-2 text-xs text-white" dir="ltr">
                 {images[key].credit} · Unsplash
               </span>
             </li>

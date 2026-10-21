@@ -3,13 +3,13 @@
 import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft, Bus } from 'lucide-react';
-import { formatDay, formatMoney, formatMonth } from '@/core/format';
+import { formatDay, formatMoney, formatMonth, formatPhone } from '@/core/format';
 import { monthOf } from '@/core/billing';
 import { todayInDubai } from '@/core/clock';
 import { PageHeader } from '@/components/shell/manager-shell';
 import { Card, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
 import type { Locale } from '@/core/repo/types';
 import { useAssignments, useFleet, usePassenger, usePassengerPayments } from '@/data/hooks';
 import { useRouter } from '@/i18n/navigation';
@@ -25,6 +25,7 @@ interface MonthRow {
 export function PassengerSOA({ passengerId }: { passengerId: string }) {
   const t = useTranslations('soa');
   const ta = useTranslations('assign');
+  const tp = useTranslations('passengers');
   const locale = useLocale() as Locale;
   const router = useRouter();
   const passenger = usePassenger(passengerId);
@@ -72,7 +73,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
     return (
       <>
         <PageHeader title={t('title')} />
-        <Card className="text-center py-8">
+        <Card className="py-8 text-center">
           <p className="text-ink-muted">{t('profile')}: Not found</p>
         </Card>
       </>
@@ -97,7 +98,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
       />
 
       {/* Passenger Profile Card */}
-      <Card className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 mb-6">
+      <Card className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div>
           <p className="text-xs text-ink-muted mb-1">{t('profile')}</p>
           <p className="font-semibold text-sm">{p.name}</p>
@@ -108,7 +109,9 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
         </div>
         <div>
           <p className="text-xs text-ink-muted mb-1">{t('phone')}</p>
-          <p className="font-semibold text-sm">{p.phone}</p>
+          <a href={`tel:+${p.phone}`} dir="ltr" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep underline-offset-2 hover:underline dark:text-brand">
+            {formatPhone(p.phone)}
+          </a>
         </div>
         <div>
           <p className="text-xs text-ink-muted mb-1">{t('joined')}</p>
@@ -135,7 +138,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
         <div>
           <p className="text-xs text-ink-muted mb-1">{t('billingType')}</p>
           <p className="font-semibold text-sm">
-            {p.billingType === 'monthly' ? t('monthly') : t('perTrip')}
+            {p.billingType === 'monthly' ? tp('monthly') : tp('perTrip')}
           </p>
         </div>
         {p.billingType === 'monthly' && (
@@ -153,7 +156,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
       </Card>
 
       {/* Car */}
-      <Card className="mb-6">
+      <Card className="mb-4">
         <CardHeader
           icon={<Bus />}
           title={ta('history')}
@@ -165,7 +168,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
             ) : undefined
           }
         />
-        <ol className="flex flex-col gap-2 px-5 pb-5" data-testid="car-history">
+        <ol className="flex flex-col gap-2" data-testid="car-history">
           {history.data?.length === 0 && <li className="text-sm text-ink-muted">{ta('historyEmpty')}</li>}
           {history.data?.map((h) => (
             <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 rounded-inner bg-soft px-4 py-2.5 text-sm">
@@ -185,42 +188,28 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
       </Card>
       {assigning && <AssignCarDialog key={p.id + String(p.carId)} passenger={p} open onOpenChange={setAssigning} />}
 
-      {/* Monthly Summary */}
+      {/* Month by month: paid against expected, and what is still open. */}
       <Card>
-        <CardHeader title={t('paymentHistory')} />
-        <div className="overflow-x-auto">
-          <DataTable<MonthRow>
-            caption={t('paymentHistory')}
-            rows={monthlyRows}
-            rowKey={(r) => r.month}
-            columns={[
-              {
-                key: 'month',
-                header: t('month'),
-                cell: (r) => formatMonth(r.month, locale),
-              },
-              {
-                key: 'expected',
-                header: t('expected'),
-                cell: (r) => formatMoney(r.expected, locale),
-                align: 'end',
-              },
-              {
-                key: 'paid',
-                header: t('paid'),
-                cell: (r) => formatMoney(r.paid, locale),
-                align: 'end',
-              },
-              {
-                key: 'balance',
-                header: t('balance'),
-                cell: (r) => formatMoney(r.balance, locale),
-                align: 'end',
-              },
-            ]}
-            empty={<p className="text-ink-muted text-center py-8">{t('noPayments')}</p>}
-          />
-        </div>
+        <CardHeader title={t('paymentHistory')} subtitle={`${t('paid')} / ${t('expected')}`} />
+        {monthlyRows.length === 0 ? (
+          <p className="py-8 text-center text-sm text-ink-muted">{t('noPayments')}</p>
+        ) : (
+          <ul className="divide-y divide-line" aria-label={t('paymentHistory')}>
+            {monthlyRows.map((r) => (
+              <li key={r.month} className="flex min-h-12 items-center justify-between gap-4 py-2 text-sm">
+                <span className="font-medium">{formatMonth(r.month, locale)}</span>
+                <span className="flex items-center gap-3">
+                  <span className="tabular text-ink-muted">
+                    {formatMoney(r.paid, locale)} / {formatMoney(r.expected, locale)}
+                  </span>
+                  <Badge tone={r.balance > 0 ? (r.month < monthOf(todayInDubai()) ? 'overdue' : 'partial') : 'paid'} className="tabular">
+                    {r.balance > 0 ? formatMoney(r.balance, locale) : t('paid')}
+                  </Badge>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </>
   );

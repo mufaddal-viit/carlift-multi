@@ -258,10 +258,11 @@ test('a passenger taken out of their car is listed as waiting until given one', 
 
   await page.goto(`/en/${AMAD}/app/passengers`);
   await page.getByRole('radio', { name: /Waiting for a car/ }).click();
-  await expect(page.getByRole('link', { name }).filter({ visible: true })).toBeVisible();
+  // The row link starts with the name; the "Call <name>" phone link beside it must not match.
+  await expect(page.getByRole('link', { name: new RegExp(`^${name}`) }).filter({ visible: true })).toBeVisible();
   await page.getByTestId(`assign-${id}`).filter({ visible: true }).click();
   await page.getByRole('dialog').getByTestId('car-option-car-majra-2').click();
   await page.getByRole('dialog').getByTestId('assign-save').click();
   await expect(page.getByText(`${name} now rides in D 67890.`)).toBeVisible();
-  await expect(page.getByRole('link', { name })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(`^${name}`) })).toHaveCount(0);
 });

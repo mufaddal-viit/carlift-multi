@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 const TINTS = ['bg-paid-bg text-paid', 'bg-partial-bg text-partial', 'bg-pending-bg text-pending', 'bg-overdue-bg text-overdue', 'bg-brand-tint text-brand-deep'];
 const tintFor = (name: string) => TINTS[[...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % TINTS.length];
 
-const sizes = { sm: 'size-8 text-[11px]', md: 'size-10 text-xs', lg: 'size-12 text-sm' };
+const sizes = { sm: 'size-8 text-xs', md: 'size-10 text-xs', lg: 'size-12 text-sm' };
 
 export function Avatar({ name, size = 'md', className }: { name: string; size?: keyof typeof sizes; className?: string }) {
   return (

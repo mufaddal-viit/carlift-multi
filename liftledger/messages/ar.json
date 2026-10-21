@@ -198,7 +198,7 @@
   },
   "passengers": {
     "title": "الركاب",
-    "searchPlaceholder": "بحث بالاسم أو الشركة...",
+    "searchPlaceholder": "بحث بالاسم أو الشركة أو المركبة",
     "addPassenger": "إضافة راكب",
     "name": "الاسم",
     "employer": "الشركة",
@@ -215,7 +215,21 @@
     "all": "الكل",
     "noResults": "لا يوجد ركاب يطابقون بحثك.",
     "emptyTitle": "لا يوجد ركاب بعد",
-    "emptyBody": "أضف أول راكب أو شارك رابط التسجيل."
+    "emptyBody": "أضف أول راكب أو شارك رابط التسجيل.",
+    "filters": "تصفية",
+    "filterDue": "مستحق",
+    "filterInactive": "غير نشط",
+    "noneDue": "لا يوجد راكب عليه رصيد مستحق.",
+    "noneInactive": "لا يوجد ركاب غير نشطين.",
+    "noneInGroup": "لا يوجد ركاب في هذه المجموعة.",
+    "seatShort": "م{n}",
+    "dueMarker": "دفعة مستحقة",
+    "call": "اتصال بـ {name}",
+    "callShort": "اتصال",
+    "whatsapp": "واتساب",
+    "details": "التفاصيل",
+    "thisMonth": "هذا الشهر",
+    "fullStatement": "كشف الحساب الكامل"
   },
   "soa": {
     "title": "كشف حساب",

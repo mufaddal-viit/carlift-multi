@@ -45,7 +45,7 @@ export function LogPaymentDialog({
   // Passengers who owe the most come first: they are the likeliest to be paying.
   const allPassengers = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
 
-  const { register, handleSubmit, control, setValue, reset, formState, watch } = useForm<FormValues>({
+  const { register, handleSubmit, control, setValue, reset, formState } = useForm<FormValues>({
     defaultValues: { passengerId: passengerId ?? '', search: '', amount: '', date: today, method: 'cash', forMonth: thisMonth, note: '' },
   });
   const { errors } = formState;
@@ -87,7 +87,7 @@ export function LogPaymentDialog({
     <Dialog open={open} onOpenChange={close} title={t('payment.title')} description={t('payment.subtitle')}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor="payment-passenger" className="text-[13px] font-medium text-ink-muted">{t('payment.passenger')}</label>
+          <label htmlFor="payment-passenger" className="text-sm font-medium text-ink-muted">{t('payment.passenger')}</label>
           <Input
             type="search"
             placeholder={t('common.search')}
@@ -137,7 +137,7 @@ export function LogPaymentDialog({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-medium text-ink-muted">{t('payment.method')}</span>
+          <span className="text-sm font-medium text-ink-muted">{t('payment.method')}</span>
           <Controller
             control={control}
             name="method"

@@ -44,7 +44,7 @@ export function TrendBars({ data, activeIndex, format, summary, className }: Tre
     <figure className={cn('m-0', className)}>
       <figcaption className="sr-only">{summary}</figcaption>
       <div className="flex gap-3" aria-hidden>
-        <div className="flex h-52 flex-col justify-between pb-0 text-end text-[11px] text-ink-muted tabular">
+        <div className="flex h-52 flex-col justify-between pb-0 text-end text-xs text-ink-muted tabular">
           {TICKS.map((t) => (
             <span key={t} className="leading-none">
               {format(Math.round(top * t))}
@@ -104,7 +104,7 @@ export function TrendBars({ data, activeIndex, format, summary, className }: Tre
             {data.map((d, i) => (
               <span
                 key={d.label}
-                className={cn('w-full max-w-14 text-center text-[11px] tracking-wide uppercase', i === active ? 'font-semibold text-ink' : 'text-ink-muted')}
+                className={cn('w-full max-w-14 text-center text-xs tracking-wide uppercase', i === active ? 'font-semibold text-ink' : 'text-ink-muted')}
               >
                 {d.label}
               </span>

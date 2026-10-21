@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Readex_Pro, Urbanist } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
@@ -11,6 +11,17 @@ const urbanist = Urbanist({ subsets: ['latin'], variable: '--font-urbanist', dis
 const readex = Readex_Pro({ subsets: ['arabic', 'latin'], variable: '--font-readex', display: 'swap' });
 
 type Props = { children: React.ReactNode; params: Promise<{ locale: string }> };
+
+/** Installed as a PWA: draw under the notch and home indicator, and pad with env(safe-area-inset-*) where it matters. */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F1F2F4' },
+    { media: '(prefers-color-scheme: dark)', color: '#0B1210' },
+  ],
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

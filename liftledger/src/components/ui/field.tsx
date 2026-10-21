@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const control =
-  'h-12 w-full rounded-inner border border-line bg-soft px-4 text-[15px] text-ink transition-[border-color,box-shadow,background-color] outline-none placeholder:text-ink-muted focus:border-brand focus:bg-card focus:ring-4 focus:ring-brand-tint aria-invalid:border-overdue aria-invalid:ring-overdue-bg';
+  'h-12 w-full rounded-md bg-soft px-4 text-base text-ink transition-[box-shadow,background-color] outline-none placeholder:text-ink-muted focus:bg-card focus:ring-2 focus:ring-brand aria-invalid:ring-2 aria-invalid:ring-overdue';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cn(control, className)} {...props} />;
@@ -44,7 +44,7 @@ export function Field({
   const message = error ?? hint;
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-[13px] font-medium text-ink-muted">
+      <label htmlFor={id} className="text-sm font-medium text-ink-muted">
         {label}
       </label>
       {cloneElement(children, { id, 'aria-invalid': !!error || undefined, 'aria-describedby': message ? messageId : undefined })}

@@ -27,7 +27,7 @@ export function Segmented<T extends string>({ value, onChange, options, layoutId
             aria-checked={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              'relative h-9 rounded-full px-4 text-[13px] font-medium transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+              'relative h-11 rounded-full px-4 text-sm font-medium transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
               active ? 'text-on-brand' : 'text-ink-muted hover:text-ink',
             )}
           >

@@ -60,10 +60,10 @@ export function DataTable<T>({ columns, rows, rowKey, empty, caption }: DataTabl
         {rows.map((row) => (
           <li key={rowKey(row)} className="rounded-inner bg-soft p-3.5">
             <div className="mb-2">{primary.cell(row)}</div>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {rest.map((c) => (
                 <div key={c.key} className="min-w-0">
-                  <dt className="text-[11px] text-ink-muted">{c.header}</dt>
+                  <dt className="text-xs text-ink-muted">{c.header}</dt>
                   <dd className="truncate">{c.cell(row)}</dd>
                 </div>
               ))}

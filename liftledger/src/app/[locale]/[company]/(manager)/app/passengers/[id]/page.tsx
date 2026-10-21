@@ -1,5 +1,4 @@
-import { notFound } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { PassengerSOA } from '@/features/passengers/passenger-soa';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Route } from '@/components/illustrations';
@@ -23,7 +24,12 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
   const t = await getTranslations();
 
   if (key === 'passengers') {
-    return <PassengersPage />;
+    // The page reads ?passenger=<id> from the URL, so it renders inside a Suspense boundary.
+    return (
+      <Suspense>
+        <PassengersPage />
+      </Suspense>
+    );
   }
 
   return (

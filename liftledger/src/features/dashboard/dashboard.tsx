@@ -15,7 +15,7 @@ import { CountUp, Stagger, StaggerItem } from '@/components/motion';
 import { PageHeader, useOpenPayment } from '@/components/shell/manager-shell';
 import { Avatar, AvatarStack } from '@/components/ui/avatar';
 import { Badge, StatusBadge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { MonthPicker } from '@/components/ui/month-picker';
@@ -24,9 +24,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCompany, useDashboard, useSession } from '@/data/hooks';
 import { useTenantPath } from '@/data/tenant';
 import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/cn';
 
 const cornerLink =
-  'grid size-10 shrink-0 place-items-center rounded-full bg-soft text-ink transition-colors outline-none hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&_svg]:size-4 rtl:[&_svg]:-scale-x-100';
+  'grid size-11 shrink-0 place-items-center rounded-full bg-soft text-ink transition-colors outline-none hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&_svg]:size-4 rtl:[&_svg]:-scale-x-100';
 
 /** A round arrow link to a manager section; href is the path inside the portal, such as '/app/payments'. */
 function CornerLink({ href, label }: { href: string; label: string }) {
@@ -52,14 +53,14 @@ function CollectedCard({ data, companyName }: { data: DashboardData; companyName
   return (
     <Card className="flex flex-col">
       <CardHeader title={t('dashboard.collected')} subtitle={t('dashboard.collectedSub')} action={<CornerLink href="/app/payments" label={t('nav.payments')} />} />
-      <div className="sheen flex flex-1 flex-col justify-between gap-6 rounded-[22px] bg-brand p-5 text-on-brand">
+      <div className="sheen flex flex-1 flex-col justify-between gap-6 rounded-md bg-brand p-4 text-on-brand">
         <div className="flex items-center justify-between gap-3">
           <span className="truncate text-sm font-semibold tracking-wide uppercase">{companyName}</span>
           <ReceiptText className="size-5 shrink-0 opacity-80" aria-hidden />
         </div>
         <div>
           <p className="text-xs opacity-80">{t('dashboard.collected')}</p>
-          <p className="text-[2rem] leading-tight font-semibold" data-testid="collected-amount">
+          <p className="text-xl font-semibold" data-testid="collected-amount">
             <CountUp value={summary.collected} format={money} />
           </p>
         </div>
@@ -79,9 +80,9 @@ function ExpectedCard({ data }: { data: DashboardData }) {
   const delta = last && last.expected > 0 ? Math.round(((data.summary.expected - last.expected) / last.expected) * 1000) / 10 : null;
   return (
     <Card>
-      <p className="text-[13px] text-ink-muted">{t('expected')}</p>
+      <p className="text-sm text-ink-muted">{t('expected')}</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[1.65rem] leading-tight font-semibold">
+        <p className="text-xl font-semibold">
           <CountUp value={data.summary.expected} format={money} />
         </p>
         {delta !== null && (
@@ -147,7 +148,7 @@ function OutstandingCard({ data }: { data: DashboardData }) {
     <Card className="flex h-full flex-col overflow-hidden" padded={false}>
       <div className="p-4 pb-0 sm:p-6 sm:pb-0">
         <CardHeader title={t('dashboard.outstanding')} subtitle={t('dashboard.outstandingSub')} action={<CornerLink href="/app/payments" label={t('nav.payments')} />} />
-        <p className="text-center text-[2rem] leading-tight font-semibold">
+        <p className="text-center text-xl font-semibold">
           <CountUp value={data.summary.outstanding} format={money} />
         </p>
       </div>
@@ -159,7 +160,7 @@ function OutstandingCard({ data }: { data: DashboardData }) {
         </Button>
         <Link
           href={to('/app/reminders')}
-          className="inline-flex h-9 items-center gap-2 rounded-full bg-card px-3.5 text-[13px] font-medium whitespace-nowrap shadow-card transition-colors outline-none hover:bg-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&_svg]:size-4"
+          className={cn(buttonClasses({ variant: 'soft' }))}
         >
           <MessageCircle aria-hidden />
           {t('dashboard.remindAll')}
@@ -179,14 +180,14 @@ function OverdueCard({ data }: { data: DashboardData }) {
     <Card className="flex h-full flex-col">
       <CardHeader icon={<AlertTriangle />} title={t('dashboard.overdue')} subtitle={t('dashboard.overdueSub')} />
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[2.25rem] leading-none font-semibold">
+        <p className="text-xl font-semibold">
           <CountUp value={amount} format={money} />
         </p>
         <Badge tone={overdue.length ? 'overdue' : 'paid'} dot>
           {overdue.length ? t('dashboard.overduePassengers', { count: overdue.length }) : t('dashboard.allClear')}
         </Badge>
       </div>
-      <div className="mt-5 flex-1 rounded-[22px] bg-soft p-4">
+      <div className="mt-4 flex-1 rounded-md bg-soft p-4">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">{t('dashboard.needsAttention')}</h3>
@@ -199,7 +200,7 @@ function OverdueCard({ data }: { data: DashboardData }) {
             <AvatarStack names={attention.map((r) => r.passenger.name)} moreLabel={(count) => t('common.more', { count })} />
             <ul className="mt-4 flex flex-col gap-2.5">
               {[...attention].sort((a, b) => b.ledger.balance - a.ledger.balance).slice(0, 3).map((r) => (
-                <li key={r.passenger.id} className="flex items-center justify-between gap-2 text-[13px]">
+                <li key={r.passenger.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{r.passenger.name}</span>
                     <span className="block text-xs text-ink-muted tabular">{t('dashboard.due', { amount: money(r.ledger.balance) })}</span>
@@ -290,8 +291,8 @@ const GRID = 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12';
 function DashboardSkeleton() {
   return (
     <div className={GRID} aria-busy="true">
-      {['xl:col-span-3 h-80', 'xl:col-span-6 h-80', 'xl:col-span-3 h-80', 'md:col-span-2 xl:col-span-9 h-72', 'xl:col-span-3 h-72', 'xl:col-span-6 h-52', 'xl:col-span-6 h-52'].map((c) => (
-        <Skeleton key={c} className={`rounded-card ${c}`} />
+      {['xl:col-span-3 h-80', 'xl:col-span-6 h-80', 'xl:col-span-3 h-80', 'md:col-span-2 xl:col-span-9 h-72', 'xl:col-span-3 h-72', 'xl:col-span-6 h-52', 'xl:col-span-6 h-52'].map((c, i) => (
+        <Skeleton key={i} className={`rounded-card ${c}`} />
       ))}
     </div>
   );
@@ -337,7 +338,7 @@ export function Dashboard() {
           <EmptyRoad title={t('illustrations.emptyRoad')} />
           <h2 className="text-xl font-semibold">{t('dashboard.emptyTitle')}</h2>
           <p className="max-w-sm text-sm text-ink-muted">{t('dashboard.emptyBody')}</p>
-          <Link href={to('/app/passengers')} className="mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-medium text-on-brand [&_svg]:size-4">
+          <Link href={to('/app/passengers')} className={cn(buttonClasses(), 'mt-2')}>
             <UserPlus aria-hidden />
             {t('nav.addPassenger')}
           </Link>

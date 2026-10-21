@@ -48,7 +48,7 @@ export function AssignCarDialog({ passenger, open, onOpenChange }: { passenger: 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title={passenger.carId ? t('change') : t('assign')} description={t('description', { name: passenger.name })}>
       <div role="radiogroup" aria-label={t('title')} className="flex flex-col gap-2" data-testid="car-options">
-        {fleet.isPending && [0, 1, 2].map((i) => <Skeleton key={i} className="h-16 rounded-[18px]" />)}
+        {fleet.isPending && [0, 1, 2].map((i) => <Skeleton key={i} className="h-16" />)}
         {cars.map((car) => (
           <CarOption key={car.id} car={car} current={car.id === passenger.carId} selected={choice === car.id} onSelect={() => setChoice(car.id)} />
         ))}
@@ -120,7 +120,7 @@ function Option({
     <label
       data-testid={`car-option-${id}`}
       className={cn(
-        'flex cursor-pointer items-center gap-3 rounded-[18px] p-3 ring-1 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand',
+        'flex min-h-16 cursor-pointer items-center gap-3 rounded-md p-3 ring-1 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand',
         selected ? 'bg-brand-tint ring-brand' : 'bg-soft ring-transparent hover:bg-line',
         disabled && 'cursor-not-allowed opacity-55 hover:bg-soft',
       )}

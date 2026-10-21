@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { Controller, useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { DROPOFF_LOCATIONS, PICKUP_LOCATIONS } from '@/core/locations';
 import type { RegistrationInput } from '@/core/repo/types';
@@ -21,11 +21,10 @@ interface FormValues {
 
 export function PassengerRegistration({ companyId, companyName }: { companyId: string; companyName: string }) {
   const t = useTranslations('register');
-  const locale = useLocale();
   const register = useRegisterPassenger();
   const [success, setSuccess] = useState(false);
 
-  const { control, register: reg, handleSubmit, formState } = useForm<FormValues>({
+  const { register: reg, handleSubmit, formState } = useForm<FormValues>({
     defaultValues: { name: '', employerName: '', phone: '', pickupArea: '', dropoffArea: '' },
   });
   const { errors } = formState;
@@ -48,8 +47,8 @@ export function PassengerRegistration({ companyId, companyName }: { companyId: s
         } as RegistrationInput,
       });
       setSuccess(true);
-    } catch (err: any) {
-      if (err.message === 'duplicate-phone') {
+    } catch (err) {
+      if (err instanceof Error && err.message === 'duplicate-phone') {
         toast.error(t('duplicatePhone'));
       } else {
         toast.error(t('errorName'));
@@ -59,9 +58,9 @@ export function PassengerRegistration({ companyId, companyName }: { companyId: s
 
   if (success) {
     return (
-      <Card className="flex flex-col gap-6 py-12 px-6 text-center">
+      <Card className="flex flex-col gap-6 py-10 text-center">
         <div>
-          <h2 className="text-2xl font-semibold mb-2">{t('successTitle')}</h2>
+          <h2 className="mb-2 text-xl font-semibold">{t('successTitle')}</h2>
           <p className="text-sm text-ink-muted leading-relaxed whitespace-pre-wrap">{t('successBody')}</p>
         </div>
         <Button onClick={() => setSuccess(false)}>{t('done')}</Button>
@@ -70,12 +69,12 @@ export function PassengerRegistration({ companyId, companyName }: { companyId: s
   }
 
   return (
-    <Card className="flex flex-col gap-6 py-8 px-6">
+    <Card className="flex flex-col gap-6">
       <div>
         <p className="mb-1 text-sm font-semibold text-brand-deep dark:text-brand" data-testid="register-company">
           {companyName}
         </p>
-        <h2 className="text-2xl font-semibold mb-1">{t('title')}</h2>
+        <h2 className="mb-1 text-xl font-semibold">{t('title')}</h2>
         <p className="text-sm text-ink-muted">{t('subtitle')}</p>
       </div>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -127,7 +126,7 @@ export function PassengerRegistration({ companyId, companyName }: { companyId: s
           </Select>
         </Field>
 
-        <div className="flex gap-3 justify-end mt-4">
+        <div className="mt-2 flex justify-end gap-3">
           <Button type="submit" loading={register.isPending}>
             {register.isPending ? t('submitting') : t('submit')}
           </Button>

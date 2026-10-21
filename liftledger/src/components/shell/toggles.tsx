@@ -34,7 +34,7 @@ export function LocaleToggle({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      className={cn(roundButton, 'flex w-auto items-center gap-1.5 px-3.5 text-[13px] font-semibold', className)}
+      className={cn(roundButton, 'flex w-auto items-center gap-1.5 px-3.5 text-sm font-semibold', className)}
       aria-label={t('language')}
       onClick={() => router.replace(pathname, { locale: next })}
     >

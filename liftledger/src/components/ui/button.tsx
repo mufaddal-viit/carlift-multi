@@ -3,22 +3,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-const button = cva(
+export const buttonClasses = cva(
   'inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-medium whitespace-nowrap transition-[background-color,color,transform,box-shadow] duration-200 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-[1.15em] [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         primary: 'bg-brand text-on-brand hover:bg-brand-deep',
         soft: 'bg-soft text-ink hover:bg-line',
-        outline: 'bg-card text-ink shadow-card hover:bg-soft',
+        outline: 'bg-card text-ink ring-1 ring-line hover:bg-soft',
         ghost: 'text-ink-muted hover:bg-soft hover:text-ink',
         danger: 'bg-overdue-bg text-overdue hover:brightness-95',
         whatsapp: 'bg-paid-bg text-paid hover:brightness-95',
       },
       size: {
-        sm: 'h-9 px-3.5 text-[13px]',
+        sm: 'h-11 px-4 text-sm',
         md: 'h-11 px-5 text-sm',
-        lg: 'h-13 px-7 text-base',
+        lg: 'h-12 px-6 text-base',
         icon: 'size-11',
       },
     },
@@ -26,7 +26,7 @@ const button = cva(
   },
 );
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof button> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonClasses> {
   loading?: boolean;
 }
 
@@ -38,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type={type}
-      className={cn(button({ variant, size }), className)}
+      className={cn(buttonClasses({ variant, size }), className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}

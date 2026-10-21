@@ -18,7 +18,7 @@ export default async function RegistrationPage({ params }: Props) {
   if (!company || company.status === 'suspended') notFound();
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-8">
+    <div className="flex min-h-dvh items-center justify-center px-gutter pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md">
         <PassengerRegistration companyId={company.id} companyName={company.name} />
       </div>

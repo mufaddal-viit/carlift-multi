@@ -21,10 +21,10 @@ export function MonthPicker({ value, onChange, min, max, className }: MonthPicke
   const prev = addMonths(value, -1);
   const next = addMonths(value, 1);
   const step =
-    'grid size-9 place-items-center rounded-full text-ink-muted transition-colors outline-none hover:bg-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-30 rtl:[&_svg]:-scale-x-100';
+    'grid size-11 place-items-center rounded-full text-ink-muted transition-colors outline-none hover:bg-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-30 rtl:[&_svg]:-scale-x-100';
 
   return (
-    <div className={cn('inline-flex h-11 items-center gap-1 rounded-full bg-card px-1 shadow-card', className)}>
+    <div className={cn('inline-flex h-12 items-center gap-0.5 rounded-full bg-soft px-0.5', className)}>
       <button type="button" className={step} aria-label={t('previousMonth')} disabled={!!min && prev < min} onClick={() => onChange(prev)}>
         <ChevronLeft className="size-4" aria-hidden />
       </button>

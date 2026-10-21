@@ -25,18 +25,18 @@ export function PortalPlaceholder({ role, name, loginHref }: { role: Role; name:
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-4 px-gutter pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between">
         <Logo />
         <div className="flex gap-2">
-          <LocaleToggle className="bg-card shadow-card" />
-          <ThemeToggle className="bg-card shadow-card" />
+          <LocaleToggle className="bg-card" />
+          <ThemeToggle className="bg-card" />
         </div>
       </header>
       <Card className="flex flex-1 flex-col items-center justify-center gap-3 py-12 text-center">
         <Shield title={t('illustrations.shield')} className="max-w-48" />
         <p className="text-sm font-semibold text-brand-deep dark:text-brand">{t(`login.roles.${role}`)}</p>
-        <h1 className="text-3xl font-medium tracking-tight">{name}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{name}</h1>
         <p className="max-w-sm text-sm text-ink-muted">{t('nav.comingSoon')}</p>
         <Button variant="soft" onClick={leave} className="mt-3">
           <LogOut className="rtl:-scale-x-100" aria-hidden />

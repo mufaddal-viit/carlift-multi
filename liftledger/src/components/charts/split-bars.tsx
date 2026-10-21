@@ -28,7 +28,7 @@ export function SplitBars({ items, max, className }: { items: SplitItem[]; max?:
         const pct = whole === 0 ? 0 : Math.min(100, (item.value / whole) * 100);
         return (
           <li key={item.label}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
               <span className="truncate font-medium">{item.label}</span>
               <span className="shrink-0 text-ink-muted tabular">{item.detail}</span>
             </div>
