@@ -29,18 +29,18 @@ export function visiblePassengers(s: Session, db: Db): Passenger[] {
   if (u.role === 'manager') return company;
   if (u.role === 'driver') {
     const mine = new Set(visibleCars(s, db).map((c) => c.id));
-    return company.filter((p) => mine.has(p.carId));
+    return company.filter((p) => p.carId !== null && mine.has(p.carId));
   }
   return company.filter((p) => p.id === u.linkedPassengerId);
 }
 
-export function canWrite(s: Session, action: WriteAction, target: { companyId: string; carId?: string }, db: Db): boolean {
+export function canWrite(s: Session, action: WriteAction, target: { companyId: string; carId?: string | null }, db: Db): boolean {
   const u = actor(s, db);
   if (!u || u.companyId !== target.companyId) return false;
   if (u.role === 'manager') return true;
   if (u.role === 'driver') {
     if (action !== 'payment' && action !== 'trip') return false;
-    return visibleCars(s, db).some((c) => c.id === target.carId);
+    return target.carId != null && visibleCars(s, db).some((c) => c.id === target.carId);
   }
   return false;
 }

@@ -1,9 +1,12 @@
 import 'server-only';
-import { createMockRepository } from './mock';
+import { prisma } from '@/server/db/client';
+import { createDbRepository } from '@/server/db/repository';
 import type { Repository } from './types';
 
-// Seeded demo data until the database replaces it. One instance per server process.
-const repo = createMockRepository({ latency: [0, 0] });
+let repo: Repository | undefined;
 
-/** The repository used by server code: route handlers, layouts and pages. */
-export const serverRepo = (): Repository => repo;
+/** The repository used by server code: route handlers, layouts and pages. Backed by MongoDB. */
+export function serverRepo(): Repository {
+  repo ??= createDbRepository(prisma());
+  return repo;
+}

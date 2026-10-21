@@ -10,10 +10,12 @@ export default defineConfig({
   timeout: 45_000,
   use: { baseURL: `http://localhost:${PORT}` },
   webServer: {
-    command: `npm run build && npx next start -p ${PORT}`,
+    // The tests write payments, so they run on their own database, rebuilt and reseeded on every run.
+    command: `npm run db:push && npm run db:seed -- --reset && npm run build && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/en/login`,
     timeout: 300_000,
     reuseExistingServer: false,
+    env: { MONGODB_DB: 'liftledger_e2e' },
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } } },

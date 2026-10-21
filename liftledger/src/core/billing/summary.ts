@@ -35,6 +35,7 @@ export function companySummary({ month, passengers, payments, trips, today, dueD
 
   const cars = new Map<string, CompanySummary['byCar'][number]>();
   for (const { p, l } of ledgers) {
+    if (p.carId === null) continue; // Waiting for a car: counted in the totals, not on any car.
     const row = cars.get(p.carId) ?? { carId: p.carId, passengers: 0, expected: 0, collected: 0 };
     row.passengers += 1;
     row.expected += l.expected;

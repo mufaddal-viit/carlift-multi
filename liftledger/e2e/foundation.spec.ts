@@ -215,10 +215,3 @@ test('the design kit and dashboard load without console errors or sideways scrol
   await page.waitForLoadState('networkidle');
   expect(errors).toEqual([]);
 });
-
-test('corrupt saved data does not break the app', async ({ page }) => {
-  await page.goto(`/en/${MAJRA}/login`);
-  await page.evaluate(() => localStorage.setItem('liftledger.db.v1', '{"broken":'));
-  await signIn(page, 'manager');
-  expect(await collected(page)).toBeGreaterThan(0);
-});

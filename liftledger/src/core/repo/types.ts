@@ -63,7 +63,8 @@ export interface Driver {
 export interface Passenger {
   id: string;
   companyId: string;
-  carId: string;
+  /** Null while the passenger waits for a car. */
+  carId: string | null;
   name: string;
   employerName: string;
   phone: string;
@@ -155,7 +156,6 @@ export type PublicCompany = Pick<Company, 'id' | 'slug' | 'name' | 'phone' | 'st
 export interface Repository {
   /** Signs in to one company (by slug), or to the platform console when the slug is null. */
   login(identifier: string, password: string, companySlug: string | null): Promise<Session>;
-  loginAs(userId: string): Promise<Session>;
   /** The demo accounts shown on a company login page, or the platform admin when the slug is null. */
   demoUsers(companySlug: string | null): Promise<DemoUser[]>;
   company(s: Session): Promise<Company>;
@@ -178,5 +178,4 @@ export interface Repository {
   companyBySlug(slug: string): Promise<PublicCompany | null>;
   /** Public: self-register a passenger from QR/link (no auth required). */
   registerPassenger(companyId: string, input: RegistrationInput): Promise<Passenger>;
-  reset(): Promise<void>;
 }

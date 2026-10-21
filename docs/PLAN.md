@@ -28,7 +28,7 @@ Work runs top to bottom. Each step is one commit to `main` (carlift-multi), test
 - [x] 0. Rename Rider to Passenger everywhere: role, routes, translations, code and tests.
 - [x] 1. Single company on the login page: only Al Majra Transport is shown, while the other seed companies remain for the isolation tests.
 - [x] 2. Company slug URLs: `/{locale}/{company-slug}/login`, `/register`, `/app`, and so on. `/en/login` redirects to `al-majra-transport`.
-- [ ] 3. Prisma and MongoDB: the schema, the tenant-scoped client, the server repository, an API bridge for the screens, seeding, and isolation tests.
+- [x] 3. Prisma and MongoDB: the schema, the tenant-scoped client, the server repository, an API bridge for the screens, seeding, and isolation tests.
 - [ ] 4. Assign a passenger to a car (manager):
   - an Assign car dialog on the passengers list and statement page;
   - the server checks that the car is active, belongs to the same company and has a free seat;

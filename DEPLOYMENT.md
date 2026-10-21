@@ -56,12 +56,15 @@ vercel --prod
 
 ### Environment Variables
 
-No environment variables required for demo. The app uses in-memory localStorage-backed mock data.
+| Name | Where it comes from | Notes |
+|---|---|---|
+| `MONGODB_URI` | Vercel → Storage → MongoDB Atlas (set automatically) | The app adds the database name (`liftledger`) itself. |
+| `MONGODB_DB` | optional | Use another database on the same cluster (the e2e tests use `liftledger_e2e`). |
+| `AUTH_SECRET` | `vercel env add AUTH_SECRET` | 32+ random characters; signs the session cookie. Production refuses to start without it. |
 
-For production with real backend, you would add:
-- `DATABASE_URL` - MongoDB or PostgreSQL connection
-- `AUTH_SECRET` - Session encryption key
-- `WHATSAPP_API_TOKEN` - WhatsApp Business API
+Locally, put the same values in `liftledger/.env.local` (git-ignored), or run `vercel env pull .env.local`.
+
+See [docs/DATABASE.md](docs/DATABASE.md) for the schema, the tenancy rules and the database commands.
 
 ---
 
@@ -102,14 +105,13 @@ docker push your-registry/liftledger:latest
 - Static generation where possible
 
 ### Security
-- All passwords hashed (mock only in demo)
-- CSRF tokens included in forms
+- Passwords hashed with scrypt; sessions are HMAC-signed, HttpOnly cookies
+- Every company's data is scoped by `companyId` in code and checked by MongoDB itself (see docs/DATABASE.md)
+- API input is validated with zod; only plain values reach database queries
 - XSS prevention via React's built-in escaping
-- SQLi prevention via parameterized queries (when real DB added)
 
 ### Data Persistence
-- **Demo**: Browser localStorage (survives page reload, not server restart)
-- **Production**: Real database (MongoDB, PostgreSQL, etc.)
+- MongoDB Atlas (one database for all companies), through Prisma 6
 
 ---
 

@@ -1,0 +1,207 @@
+// LiftLedger: one MongoDB database shared by every company.
+//
+// Tenancy rules (see docs/PLAN.md):
+// - Every company-owned collection has a required `companyId`, and every unique index starts with it,
+//   so two companies can hold the same phone number or plate without clashing.
+// - Application code reaches these collections only through `forCompany(companyId)` (src/server/db/tenant.ts),
+//   which adds `companyId` to every query and stamps it on every insert.
+// - MongoDB has no foreign keys, so links (a passenger's car, a payment's passenger) are plain ids that the
+//   repository resolves through the same company-scoped client: another company's record reads as not found.
+// - Business dates (join date, payment date, trip date) are stored as "YYYY-MM-DD" strings in UAE time on
+//   purpose: they are calendar days, not instants, and must not shift with server time zones.
+//
+// The database URL is built at runtime from MONGODB_URI (Vercel Storage); see src/server/db/url.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  manager
+  driver
+  passenger
+}
+
+enum CompanyStatus {
+  active
+  trial
+  suspended
+}
+
+enum RecordStatus {
+  active
+  inactive
+}
+
+enum BillingType {
+  monthly
+  perTrip
+}
+
+enum PayMethod {
+  cash
+  transfer
+  wallet
+}
+
+enum TripStatus {
+  travelled
+  absent
+}
+
+enum Locale {
+  en
+  ar
+}
+
+// ---- Platform-level (not owned by a company) ------------------------------
+
+model Plan {
+  id            String   @id @map("_id")
+  name          String
+  priceAed      Int
+  maxCars       Int?
+  maxPassengers Int?
+  features      String[]
+
+  @@map("plans")
+}
+
+model Company {
+  id           String        @id @default(cuid()) @map("_id")
+  /// The company's address in URLs: /en/{slug}/login.
+  slug         String        @unique
+  name         String
+  tradeLicense String?
+  city         String
+  phone        String
+  planId       String
+  status       CompanyStatus @default(trial)
+  /// Day of the month monthly fees fall due.
+  dueDay       Int           @default(5)
+  currency     String        @default("AED")
+  createdAt    DateTime      @default(now())
+
+  @@map("companies")
+}
+
+// ---- Company-owned ----------------------------------------------------------
+
+model User {
+  id                String   @id @default(cuid()) @map("_id")
+  /// Null only for platform admins.
+  companyId         String?
+  role              Role
+  name              String
+  /// Lowercase. Unique within a company, checked by the repository (MongoDB unique indexes treat missing values as equal).
+  email             String?
+  /// International form without symbols: 971501234567.
+  phone             String
+  passwordHash      String
+  locale            Locale   @default(en)
+  linkedDriverId    String?
+  linkedPassengerId String?
+  /// Seeded demo account: listed on the login page so visitors can try the product.
+  demo              Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@unique([companyId, phone])
+  @@index([companyId, email])
+  @@map("users")
+}
+
+model Driver {
+  id        String       @id @default(cuid()) @map("_id")
+  companyId String
+  name      String
+  phone     String
+  licenseNo String?
+  status    RecordStatus @default(active)
+  createdAt DateTime     @default(now())
+
+  @@unique([companyId, phone])
+  @@map("drivers")
+}
+
+model Car {
+  id        String       @id @default(cuid()) @map("_id")
+  companyId String
+  model     String
+  plate     String
+  /// Passenger seats.
+  capacity  Int
+  driverId  String?
+  status    RecordStatus @default(active)
+  photoKey  String       @default("hiace")
+  createdAt DateTime     @default(now())
+
+  @@unique([companyId, plate])
+  @@index([companyId, driverId])
+  @@map("cars")
+}
+
+model Passenger {
+  id           String       @id @default(cuid()) @map("_id")
+  companyId    String
+  /// Null while the passenger waits for a car.
+  carId        String?
+  name         String
+  employerName String
+  phone        String
+  pickupArea   String
+  dropArea     String
+  route        String
+  seatNumber   Int
+  billingType  BillingType  @default(monthly)
+  monthlyFee   Int          @default(0)
+  perTripFee   Int          @default(0)
+  /// YYYY-MM-DD
+  joinDate     String
+  status       RecordStatus @default(active)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([companyId, phone])
+  @@index([companyId, carId])
+  @@index([companyId, status])
+  @@map("passengers")
+}
+
+model Payment {
+  id             String    @id @default(cuid()) @map("_id")
+  companyId      String
+  passengerId    String
+  /// Whole dirhams.
+  amount         Int
+  /// YYYY-MM-DD the money was received.
+  date           String
+  method         PayMethod
+  /// YYYY-MM the payment counts towards.
+  forMonth       String
+  note           String?
+  loggedByUserId String
+  createdAt      DateTime  @default(now())
+
+  @@index([companyId, forMonth])
+  @@index([companyId, passengerId])
+  @@map("payments")
+}
+
+model Trip {
+  id          String     @id @default(cuid()) @map("_id")
+  companyId   String
+  passengerId String
+  /// YYYY-MM-DD
+  date        String
+  status      TripStatus
+
+  @@unique([companyId, passengerId, date])
+  @@index([companyId, date])
+  @@map("trips")
+}
