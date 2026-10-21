@@ -12,12 +12,7 @@ export function generateQRSVG(text: string, size: number = 200): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}`;
 }
 
-/**
- * Generate a registration link for a company.
- * @param locale - The locale (en or ar)
- * @param companyId - The company ID
- * @param baseUrl - The base URL (e.g., https://example.com)
- */
-export function generateRegistrationLink(locale: string, companyId: string, baseUrl: string): string {
-  return `${baseUrl}/${locale}/register/${companyId}`;
+/** The public registration address of a company, e.g. https://liftledger-chi.vercel.app/en/al-majra-transport/register. */
+export function generateRegistrationLink(locale: string, companySlug: string, baseUrl: string): string {
+  return `${baseUrl}/${locale}/${companySlug}/register`;
 }

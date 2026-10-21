@@ -13,7 +13,7 @@ import { signOut } from '@/data/session-client';
 import { useRouter } from '@/i18n/navigation';
 
 /** Temporary home for the portals that are built in later plans (driver, passenger, platform admin). */
-export function PortalPlaceholder({ role, name }: { role: Role; name: string }) {
+export function PortalPlaceholder({ role, name, loginHref }: { role: Role; name: string; loginHref: string }) {
   const t = useTranslations();
   const router = useRouter();
   const client = useQueryClient();
@@ -21,7 +21,7 @@ export function PortalPlaceholder({ role, name }: { role: Role; name: string }) 
   const leave = async () => {
     await signOut();
     client.clear();
-    router.replace('/login');
+    router.replace(loginHref);
   };
 
   return (

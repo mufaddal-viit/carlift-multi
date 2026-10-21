@@ -72,6 +72,9 @@ export function PassengerRegistration({ companyId, companyName }: { companyId: s
   return (
     <Card className="flex flex-col gap-6 py-8 px-6">
       <div>
+        <p className="mb-1 text-sm font-semibold text-brand-deep dark:text-brand" data-testid="register-company">
+          {companyName}
+        </p>
         <h2 className="text-2xl font-semibold mb-1">{t('title')}</h2>
         <p className="text-sm text-ink-muted">{t('subtitle')}</p>
       </div>

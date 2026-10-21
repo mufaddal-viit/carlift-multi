@@ -11,13 +11,14 @@ class MemStorage {
 }
 
 const TODAY = '2026-10-13';
+const MAJRA = 'al-majra-transport';
 const MONTH = '2026-10';
 let storage: MemStorage;
 let repo: Repository;
 let manager: Session;
 const make = (s = storage) => createMockRepository({ storage: s, today: () => TODAY, latency: [0, 0] });
 const as = async (role: string, r = repo) => {
-  const u = (await r.demoUsers()).find((x) => x.role === role)!;
+  const u = (await r.demoUsers(role === 'admin' ? null : MAJRA)).find((x) => x.role === role)!;
   return r.loginAs(u.id);
 };
 
@@ -29,37 +30,54 @@ beforeEach(async () => {
 
 describe('login', () => {
   it('accepts a seeded manager by email', async () => {
-    const s = await repo.login('manager@almajra.ae', DEMO_PASSWORD);
-    expect(s).toMatchObject({ role: 'manager', companyId: DEMO_COMPANY_ID });
+    const s = await repo.login('manager@almajra.ae', DEMO_PASSWORD, MAJRA);
+    expect(s).toMatchObject({ role: 'manager', companyId: DEMO_COMPANY_ID, companySlug: MAJRA });
   });
   it('accepts a phone number as the identifier, however it is spaced', async () => {
-    const s = await repo.login('+971 50 100 0001', DEMO_PASSWORD);
+    const s = await repo.login('+971 50 100 0001', DEMO_PASSWORD, MAJRA);
     expect(s.role).toBe('manager');
   });
   it('accepts a local mobile number', async () => {
-    const s = await repo.login('050 100 0001', DEMO_PASSWORD);
+    const s = await repo.login('050 100 0001', DEMO_PASSWORD, MAJRA);
     expect(s.role).toBe('manager');
   });
   it('signs each manager into their own company', async () => {
-    const s = await repo.login('manager@skyline.example', DEMO_PASSWORD);
-    expect(s).toMatchObject({ role: 'manager', companyId: 'co-skyline' });
+    const s = await repo.login('manager@skyline.example', DEMO_PASSWORD, 'skyline-commute');
+    expect(s).toMatchObject({ role: 'manager', companyId: 'co-skyline', companySlug: 'skyline-commute' });
   });
+  it("refuses a user on another company's login page", () =>
+    expect(repo.login('manager@skyline.example', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials'));
+  it('refuses a company user on the platform login, and the admin on a company login', async () => {
+    await expect(repo.login('manager@almajra.ae', DEMO_PASSWORD, null)).rejects.toThrow('invalid-credentials');
+    await expect(repo.login('admin@liftledger.app', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials');
+    expect(await repo.login('admin@liftledger.app', DEMO_PASSWORD, null)).toMatchObject({ role: 'admin', companySlug: null });
+  });
+  it('refuses every login for a company address that does not exist', () =>
+    expect(repo.login('manager@almajra.ae', DEMO_PASSWORD, 'no-such-company')).rejects.toThrow('invalid-credentials'));
   it('refuses users of a suspended company', () =>
-    expect(repo.login('manager@palm.example', DEMO_PASSWORD)).rejects.toThrow('company-suspended'));
+    expect(repo.login('manager@palm.example', DEMO_PASSWORD, 'palm-shuttle')).rejects.toThrow('company-suspended'));
   it('does not reveal a suspended company to a wrong password', () =>
-    expect(repo.login('manager@palm.example', 'nope')).rejects.toThrow('invalid-credentials'));
-  it('lists a manager for every company among the demo accounts', async () => {
-    const managers = (await repo.demoUsers()).filter((u) => u.role === 'manager');
-    expect(managers.map((u) => u.companyName)).toEqual(['Al Majra Transport', 'Skyline Commute', 'Oasis Commute', 'Palm Shuttle']);
+    expect(repo.login('manager@palm.example', 'nope', 'palm-shuttle')).rejects.toThrow('invalid-credentials'));
+  it("lists only that company's accounts on a company login page", async () => {
+    const users = await repo.demoUsers(MAJRA);
+    expect(users.length).toBeGreaterThan(3);
+    expect(users.every((u) => u.companyId === DEMO_COMPANY_ID)).toBe(true);
+    expect(new Set(users.map((u) => u.role))).toEqual(new Set(['manager', 'driver', 'passenger']));
+  });
+  it('lists only the platform admin on the platform login page', async () =>
+    expect((await repo.demoUsers(null)).map((u) => u.role)).toEqual(['admin']));
+  it('finds a company by its address', async () => {
+    expect(await repo.companyBySlug(MAJRA)).toMatchObject({ id: DEMO_COMPANY_ID, name: 'Al Majra Transport' });
+    expect(await repo.companyBySlug('nope')).toBeNull();
   });
   it('rejects a wrong password', () =>
-    expect(repo.login('manager@almajra.ae', 'nope')).rejects.toThrow('invalid-credentials'));
+    expect(repo.login('manager@almajra.ae', 'nope', MAJRA)).rejects.toThrow('invalid-credentials'));
   it('rejects an unknown user', () =>
-    expect(repo.login('nobody@example.com', DEMO_PASSWORD)).rejects.toThrow('invalid-credentials'));
+    expect(repo.login('nobody@example.com', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials'));
   it('rejects an empty identifier', () =>
-    expect(repo.login('', DEMO_PASSWORD)).rejects.toThrow('invalid-credentials'));
+    expect(repo.login('', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials'));
   it('never exposes passwords in the demo user list', async () => {
-    expect(JSON.stringify(await repo.demoUsers())).not.toContain(DEMO_PASSWORD);
+    expect(JSON.stringify([await repo.demoUsers(MAJRA), await repo.demoUsers(null)])).not.toContain(DEMO_PASSWORD);
   });
 });
 

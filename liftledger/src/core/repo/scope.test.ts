@@ -6,7 +6,8 @@ import type { Role, Session } from './types';
 const db = buildSeed('2026-10-13');
 const sessionOf = (role: Role, companyId: string | null = DEMO_COMPANY_ID): Session => {
   const u = db.users.find((x) => x.role === role && x.companyId === companyId)!;
-  return { userId: u.id, role, companyId, name: u.name, locale: 'en' };
+  const companySlug = db.companies.find((c) => c.id === companyId)?.slug ?? null;
+  return { userId: u.id, role, companyId, companySlug, name: u.name, locale: 'en' };
 };
 const manager = sessionOf('manager');
 const driver = sessionOf('driver');

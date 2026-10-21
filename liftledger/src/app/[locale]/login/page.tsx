@@ -1,14 +1,8 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SignIn } from '@/features/auth/sign-in';
+import { DEFAULT_COMPANY_SLUG } from '@/core/tenant';
+import { redirect } from '@/i18n/navigation';
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+// While LiftLedger serves one operator, the bare login opens that operator's sign-in.
+export default async function LoginRedirect({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'login' });
-  return { title: t('title') };
-}
-
-export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  return <SignIn />;
+  redirect({ href: `/${DEFAULT_COMPANY_SLUG}/login`, locale });
 }

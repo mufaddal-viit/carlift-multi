@@ -10,12 +10,14 @@ const LOCALES = ['en', 'ar'];
 /** A session from untrusted JSON, or null when any field is missing or wrong. */
 function parseSession(x: unknown): Session | null {
   if (typeof x !== 'object' || x === null) return null;
-  const { userId, role, companyId, name, locale } = x as Record<string, unknown>;
+  const { userId, role, companyId, companySlug, name, locale } = x as Record<string, unknown>;
   if (typeof userId !== 'string' || userId === '' || typeof name !== 'string') return null;
   if (typeof role !== 'string' || !ROLES.includes(role)) return null;
   if (typeof locale !== 'string' || !LOCALES.includes(locale)) return null;
   if (companyId !== null && typeof companyId !== 'string') return null;
-  return { userId, role, companyId, name, locale } as Session;
+  if (companySlug !== null && typeof companySlug !== 'string') return null;
+  if ((companyId === null) !== (companySlug === null)) return null;
+  return { userId, role, companyId, companySlug, name, locale } as Session;
 }
 
 const text = new TextEncoder();

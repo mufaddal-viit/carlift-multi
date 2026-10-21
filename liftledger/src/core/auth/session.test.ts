@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SESSION_MAX_AGE, signSession, verifySession } from './session';
 import type { Session } from '../repo/types';
 
-const s: Session = { userId: 'u1', role: 'manager', companyId: 'c1', name: 'أحمد Noor', locale: 'ar' };
+const s: Session = { userId: 'u1', role: 'manager', companyId: 'c1', companySlug: 'company-one', name: 'أحمد Noor', locale: 'ar' };
 const SECRET = 'a-test-secret-that-is-long-enough-1234';
 const NOW = Date.UTC(2026, 9, 20);
 
@@ -11,9 +11,12 @@ describe('signed session cookie', () => {
     expect(await verifySession(await signSession(s, SECRET, NOW), SECRET, NOW)).toEqual(s));
 
   it('keeps a null company for the platform admin', async () => {
-    const admin = await signSession({ ...s, role: 'admin', companyId: null }, SECRET, NOW);
-    expect((await verifySession(admin, SECRET, NOW))?.companyId).toBeNull();
+    const admin = await signSession({ ...s, role: 'admin', companyId: null, companySlug: null }, SECRET, NOW);
+    expect(await verifySession(admin, SECRET, NOW)).toMatchObject({ companyId: null, companySlug: null });
   });
+
+  it('rejects a session with a company but no company address', async () =>
+    expect(await verifySession(await signSession({ ...s, companySlug: null }, SECRET, NOW), SECRET, NOW)).toBeNull());
 
   it('is safe to put in a cookie', async () => expect(await signSession(s, SECRET, NOW)).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/));
 

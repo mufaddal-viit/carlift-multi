@@ -6,6 +6,6 @@ import { redirect } from '@/i18n/navigation';
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const session = await sessionFor('admin');
-  if (!session) return redirect({ href: '/login', locale });
-  return <PortalPlaceholder role={session.role} name={session.name} />;
+  if (!session) return redirect({ href: '/admin/login', locale });
+  return <PortalPlaceholder role={session.role} name={session.name} loginHref="/admin/login" />;
 }

@@ -123,6 +123,7 @@
     "demoHint": "Tap an account to fill in its details, then sign in. Every demo password is {password}.",
     "fillAs": "Fill in the details for {name}",
     "platform": "LiftLedger platform",
+    "platformSubtitle": "For LiftLedger staff. Company staff sign in at their company address.",
     "kit": "Open the design kit",
     "roles": {
       "admin": "Platform admin",

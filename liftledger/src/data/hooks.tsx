@@ -35,9 +35,9 @@ function useInvalidateLive() {
   return () => Promise.all(LIVE.map((key) => client.invalidateQueries({ queryKey: [key] })));
 }
 
-export function useDemoUsers() {
+export function useDemoUsers(companySlug: string | null) {
   const repo = useRepo();
-  return useQuery({ queryKey: ['demoUsers'], queryFn: () => repo.demoUsers() });
+  return useQuery({ queryKey: ['demoUsers', companySlug], queryFn: () => repo.demoUsers(companySlug) });
 }
 
 export function useCompany() {

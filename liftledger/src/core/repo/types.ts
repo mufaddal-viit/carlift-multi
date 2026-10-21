@@ -14,6 +14,8 @@ export interface Plan {
 
 export interface Company {
   id: string;
+  /** The company's address in URLs: /en/{slug}/login. Unique across the platform. */
+  slug: string;
   name: string;
   tradeLicense?: string;
   city: string;
@@ -116,6 +118,8 @@ export interface Session {
   userId: string;
   role: Role;
   companyId: string | null;
+  /** Kept in the signed cookie so the URL guard can check the company without a database call. */
+  companySlug: string | null;
   name: string;
   locale: Locale;
 }
@@ -143,12 +147,17 @@ export type PaymentInput = Pick<Payment, 'passengerId' | 'amount' | 'date' | 'me
 
 export type RegistrationInput = Pick<Passenger, 'name' | 'employerName' | 'phone' | 'pickupArea' | 'dropArea'>;
 
-export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email' | 'companyId'> & { companyName: string | null };
+export type DemoUser = Pick<User, 'id' | 'name' | 'role' | 'email' | 'companyId'>;
+
+/** What anyone may know about a company: enough to brand its login and registration pages. */
+export type PublicCompany = Pick<Company, 'id' | 'slug' | 'name' | 'phone' | 'status'>;
 
 export interface Repository {
-  login(identifier: string, password: string): Promise<Session>;
+  /** Signs in to one company (by slug), or to the platform console when the slug is null. */
+  login(identifier: string, password: string, companySlug: string | null): Promise<Session>;
   loginAs(userId: string): Promise<Session>;
-  demoUsers(): Promise<DemoUser[]>;
+  /** The demo accounts shown on a company login page, or the platform admin when the slug is null. */
+  demoUsers(companySlug: string | null): Promise<DemoUser[]>;
   company(s: Session): Promise<Company>;
   cars(s: Session): Promise<Car[]>;
   drivers(s: Session): Promise<Driver[]>;
@@ -164,7 +173,9 @@ export interface Repository {
   statusBoard(s: Session, month: string): Promise<StatusRow[]>;
   dashboard(s: Session, month: string): Promise<DashboardData>;
   /** Public: get company name by id (no auth required). */
-  companyById(companyId: string): Promise<{ id: string; name: string; phone: string } | null>;
+  companyById(companyId: string): Promise<PublicCompany | null>;
+  /** Public: the company at an address, or null when there is none. */
+  companyBySlug(slug: string): Promise<PublicCompany | null>;
   /** Public: self-register a passenger from QR/link (no auth required). */
   registerPassenger(companyId: string, input: RegistrationInput): Promise<Passenger>;
   reset(): Promise<void>;

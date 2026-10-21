@@ -1,7 +1,8 @@
 import { addMonths, daysInMonth, expectedFor, monthOf } from '../billing';
+import { slugify } from '../tenant';
 import type { Car, Company, Db, Driver, Passenger, PayMethod, Payment, Plan, Trip, User } from './types';
 
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const DEMO_COMPANY_ID = 'co-majra';
 export const DEMO_PASSWORD = 'demo1234';
 
@@ -128,7 +129,7 @@ export function buildSeed(today: string): Db {
 
   // ---- Main demo company -------------------------------------------------
   companies.push({
-    id: DEMO_COMPANY_ID, name: 'Al Majra Transport', tradeLicense: 'CN-1048821', city: 'Dubai', phone: '97143001000',
+    id: DEMO_COMPANY_ID, slug: 'al-majra-transport', name: 'Al Majra Transport', tradeLicense: 'CN-1048821', city: 'Dubai', phone: '97143001000',
     planId: 'plan-growth', status: 'active', dueDay: 5, currency: 'AED', createdAt: `${addMonths(month, -14)}-01`,
   });
 
@@ -214,7 +215,7 @@ export function buildSeed(today: string): Db {
   OTHER_COMPANIES.forEach((c, ci) => {
     const short = c.id.slice(3);
     companies.push({
-      id: c.id, name: c.name, city: c.city, phone: `9716500${pad(ci + 1)}000`, planId: c.planId, status: c.status,
+      id: c.id, slug: slugify(c.name), name: c.name, city: c.city, phone: `9716500${pad(ci + 1)}000`, planId: c.planId, status: c.status,
       dueDay: 5 + ci * 5, currency: 'AED', createdAt: `${addMonths(month, -(3 + ci * 2))}-10`,
     });
     users.push({ id: `u-mgr-${short}`, companyId: c.id, role: 'manager', name: `${pick(FIRST)} ${pick(LAST)}`, email: `manager@${short}.example`, phone: `97150300000${ci + 1}`, password: DEMO_PASSWORD, locale: 'en' });

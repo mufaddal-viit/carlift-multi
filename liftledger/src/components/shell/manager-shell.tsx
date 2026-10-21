@@ -10,6 +10,7 @@ import { PageTransition, spring } from '@/components/motion';
 import { Avatar } from '@/components/ui/avatar';
 import { useCompany, useSession } from '@/data/hooks';
 import { signOut } from '@/data/session-client';
+import { useTenantPath } from '@/data/tenant';
 import { LogPaymentDialog } from '@/features/dashboard/log-payment-dialog';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/cn';
@@ -25,7 +26,8 @@ const NAV: { key: NavKey; href: string; icon: LucideIcon }[] = [
   { key: 'attendance', href: '/app/attendance', icon: CalendarCheck },
 ];
 
-const isActive = (pathname: string, href: string) => (href === '/app' ? pathname === '/app' : pathname.startsWith(href));
+/** Both paths are full company addresses; the dashboard only matches itself, other sections match their sub-pages too. */
+const isActive = (pathname: string, href: string) => (href.endsWith('/app') ? pathname === href : pathname.startsWith(href));
 
 const PaymentDialogContext = createContext<(passengerId?: string) => void>(() => {});
 /** Opens the "log a payment" dialog from anywhere in the manager portal, optionally for one passenger. */
@@ -34,6 +36,7 @@ export const useOpenPayment = () => useContext(PaymentDialogContext);
 function TopBar() {
   const t = useTranslations();
   const pathname = usePathname();
+  const to = useTenantPath();
   const router = useRouter();
   const session = useSession();
   const company = useCompany();
@@ -42,23 +45,23 @@ function TopBar() {
   const leave = async () => {
     await signOut();
     client.clear();
-    router.replace('/login');
+    router.replace(to('/login'));
   };
 
   return (
     <header className="sticky top-3 z-30 mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-3 rounded-full bg-card/90 ps-5 pe-2.5 shadow-card backdrop-blur-md">
-      <Link href="/app" aria-label={t('common.appName')} className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+      <Link href={to('/app')} aria-label={t('common.appName')} className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
         <Logo wordmark={false} className="sm:hidden" />
         <Logo className="hidden sm:inline-flex" />
       </Link>
 
       <nav aria-label={t('nav.main')} className="hidden rounded-full bg-soft p-1 lg:flex">
         {NAV.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = isActive(pathname, to(item.href));
           return (
             <Link
               key={item.key}
-              href={item.href}
+              href={to(item.href)}
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative rounded-full px-4 py-2.5 text-sm font-medium transition-colors outline-none focus-visible:outline-2 focus-visible:outline-brand',
@@ -129,6 +132,7 @@ function RailLink({ href, label, icon: Icon, active }: { href: string; label: st
 function IconRail({ onLogPayment }: { onLogPayment: () => void }) {
   const t = useTranslations('nav');
   const pathname = usePathname();
+  const to = useTenantPath();
   const capsule = 'flex flex-col gap-1.5 rounded-full bg-card p-1.5 shadow-card';
   return (
     <aside aria-label={t('quickActions')} className="fixed start-4 top-28 bottom-6 z-20 hidden flex-col justify-between lg:flex 2xl:start-[max(1rem,calc((100vw-1400px)/2-4.5rem))]">
@@ -143,15 +147,15 @@ function IconRail({ onLogPayment }: { onLogPayment: () => void }) {
           >
             <Plus className="size-5" aria-hidden />
           </button>
-          <RailLink href="/app/passengers" label={t('addPassenger')} icon={UserPlus} />
-          <RailLink href="/app/attendance" label={t('attendance')} icon={CalendarCheck} active={isActive(pathname, '/app/attendance')} />
+          <RailLink href={to('/app/passengers')} label={t('addPassenger')} icon={UserPlus} />
+          <RailLink href={to('/app/attendance')} label={t('attendance')} icon={CalendarCheck} active={isActive(pathname, to('/app/attendance'))} />
         </div>
         <div className={capsule}>
-          <RailLink href="/app/reminders" label={t('reminders')} icon={MessageCircle} active={isActive(pathname, '/app/reminders')} />
+          <RailLink href={to('/app/reminders')} label={t('reminders')} icon={MessageCircle} active={isActive(pathname, to('/app/reminders'))} />
         </div>
       </div>
       <div className={capsule}>
-        <RailLink href="/app/settings" label={t('settings')} icon={Settings} active={isActive(pathname, '/app/settings')} />
+        <RailLink href={to('/app/settings')} label={t('settings')} icon={Settings} active={isActive(pathname, to('/app/settings'))} />
       </div>
     </aside>
   );
@@ -160,14 +164,15 @@ function IconRail({ onLogPayment }: { onLogPayment: () => void }) {
 function BottomTabs() {
   const t = useTranslations('nav');
   const pathname = usePathname();
+  const to = useTenantPath();
   return (
     <nav aria-label={t('main')} className="fixed inset-x-3 bottom-3 z-30 flex justify-between rounded-full bg-card/95 p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-card ring-1 ring-line backdrop-blur-md lg:hidden">
       {NAV.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isActive(pathname, to(item.href));
         return (
           <Link
             key={item.key}
-            href={item.href}
+            href={to(item.href)}
             aria-current={active ? 'page' : undefined}
             className={cn(
               'relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full py-2 text-[10px] font-medium outline-none focus-visible:outline-2 focus-visible:outline-brand',

@@ -2,7 +2,7 @@ import { companySummary, monthOf, statusFor } from '../billing';
 import { todayInDubai } from '../clock';
 import { buildSeed, DB_VERSION } from './seed';
 import { canWrite, visibleCars, visiblePassengers, type WriteAction } from './scope';
-import type { Db, Passenger, RegistrationInput, Repository, Session, StatusRow, Trip, User } from './types';
+import type { Company, Db, Passenger, PublicCompany, RegistrationInput, Repository, Session, StatusRow, Trip, User } from './types';
 
 export const STORAGE_KEY = 'liftledger.db.v2';
 
@@ -55,7 +55,20 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
 
   const wait = () => (hi <= 0 ? Promise.resolve() : new Promise<void>((r) => setTimeout(r, lo + Math.random() * (hi - lo))));
 
-  const toSession = (u: User): Session => ({ userId: u.id, role: u.role, companyId: u.companyId, name: u.name, locale: u.locale });
+  const toSession = (u: User): Session => ({
+    userId: u.id, role: u.role, companyId: u.companyId,
+    companySlug: db().companies.find((c) => c.id === u.companyId)?.slug ?? null, name: u.name, locale: u.locale,
+  });
+
+  const toPublic = ({ id, slug, name, phone, status }: Company): PublicCompany => ({ id, slug, name, phone, status });
+
+  /** Who may sign in on a page: the company's own users, or only the platform admin when there is no company. */
+  const accountsOf = (companySlug: string | null): User[] => {
+    const d = db();
+    if (companySlug === null) return d.users.filter((u) => u.role === 'admin' && u.companyId === null);
+    const company = d.companies.find((c) => c.slug === companySlug);
+    return company ? d.users.filter((u) => u.companyId === company.id) : [];
+  };
 
   const seen = (s: Session, id: string): Passenger => {
     const p = visiblePassengers(s, db()).find((x) => x.id === id);
@@ -93,13 +106,13 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
   };
 
   return {
-    async login(identifier, password) {
+    async login(identifier, password, companySlug) {
       await wait();
       const d = db();
       const id = identifier.trim().toLowerCase();
       // Local mobile numbers (050 123 4567) are stored in international form (971501234567).
       const digits = id.replace(/\D/g, '').replace(/^0(?=5\d{8}$)/, '971');
-      const u = d.users.find((x) => (id.includes('@') ? x.email?.toLowerCase() === id : digits.length > 0 && x.phone === digits));
+      const u = accountsOf(companySlug).find((x) => (id.includes('@') ? x.email?.toLowerCase() === id : digits.length > 0 && x.phone === digits));
       if (!u || u.password !== password) throw fail('invalid-credentials');
       if (u.companyId && d.companies.find((c) => c.id === u.companyId)?.status === 'suspended') throw fail('company-suspended');
       return toSession(u);
@@ -112,14 +125,9 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
       return toSession(u);
     },
 
-    async demoUsers() {
+    async demoUsers(companySlug) {
       await wait();
-      const d = db();
-      const first = d.companies[0]?.id;
-      const companyName = (id: string | null) => d.companies.find((c) => c.id === id)?.name ?? null;
-      return d.users
-        .filter((u) => u.companyId === first || u.role === 'admin' || u.role === 'manager')
-        .map(({ id, name, role, email, companyId }) => ({ id, name, role, email, companyId, companyName: companyName(companyId) }));
+      return accountsOf(companySlug).map(({ id, name, role, email, companyId }) => ({ id, name, role, email, companyId }));
     },
 
     async company(s) {
@@ -277,7 +285,13 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
     async companyById(companyId) {
       await wait();
       const c = db().companies.find((x) => x.id === companyId);
-      return c ? { id: c.id, name: c.name, phone: c.phone } : null;
+      return c ? toPublic(c) : null;
+    },
+
+    async companyBySlug(slug) {
+      await wait();
+      const c = db().companies.find((x) => x.slug === slug);
+      return c ? toPublic(c) : null;
     },
 
     async registerPassenger(companyId, input) {

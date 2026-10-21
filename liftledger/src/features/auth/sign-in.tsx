@@ -14,31 +14,32 @@ import { Field, Input } from '@/components/ui/field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDemoUsers } from '@/data/hooks';
 import { signIn, type SignInError } from '@/data/session-client';
+import { useTenant } from '@/data/tenant';
 import { Link, useRouter } from '@/i18n/navigation';
 
 const ICONS: Record<Role, LucideIcon> = { admin: ShieldCheck, manager: Briefcase, driver: Bus, passenger: User };
 const ORDER: Role[] = ['manager', 'driver', 'passenger', 'admin'];
 
-/** One account per role and company, grouped by company, the platform admin last. */
-function groupDemoAccounts(users: DemoUser[]) {
-  const groups = new Map<string | null, DemoUser[]>();
-  for (const u of users) {
-    const list = groups.get(u.companyId) ?? [];
-    if (!list.some((x) => x.role === u.role)) groups.set(u.companyId, [...list, u]);
-  }
-  return [...groups.entries()]
-    .sort(([a], [b]) => Number(a === null) - Number(b === null))
-    .map(([companyId, list]) => ({
-      companyId,
-      companyName: list[0].companyName,
-      accounts: list.sort((a, b) => ORDER.indexOf(a.role) - ORDER.indexOf(b.role)),
-    }));
+/** One demo account per role, in the order people usually try them. */
+function demoAccounts(users: DemoUser[]) {
+  const firsts = users.filter((u, i) => users.findIndex((x) => x.role === u.role) === i);
+  return firsts.sort((a, b) => ORDER.indexOf(a.role) - ORDER.indexOf(b.role));
 }
 
-export function SignIn() {
+/** Signs in to the company whose address the page is under, or to the platform console. */
+export function SignIn({ platform = false }: { platform?: boolean }) {
+  return platform ? <SignInForm slug={null} /> : <CompanySignIn />;
+}
+
+function CompanySignIn() {
+  const company = useTenant();
+  return <SignInForm slug={company.slug} companyName={company.name} />;
+}
+
+function SignInForm({ slug, companyName }: { slug: string | null; companyName?: string }) {
   const t = useTranslations('login');
   const router = useRouter();
-  const users = useDemoUsers();
+  const users = useDemoUsers(slug);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +55,7 @@ export function SignIn() {
     }
     setBusy(true);
     setError(null);
-    const result = await signIn(identifier, password);
+    const result = await signIn(identifier, password, slug);
     if ('home' in result) {
       router.replace(result.home);
       router.refresh();
@@ -83,8 +84,11 @@ export function SignIn() {
 
       <Card className="flex flex-col items-center gap-2 py-8 text-center">
         <Van title={t('title')} className="max-w-40" />
-        <h1 className="mt-2 text-3xl font-medium tracking-tight">{t('title')}</h1>
-        <p className="max-w-sm text-sm text-ink-muted">{t('subtitle')}</p>
+        <p className="mt-2 text-sm font-semibold text-brand-deep dark:text-brand">{t('title')}</p>
+        <h1 className="text-3xl font-medium tracking-tight" data-testid="login-company">
+          {companyName ?? t('platform')}
+        </h1>
+        <p className="max-w-sm text-sm text-ink-muted">{companyName ? t('subtitle') : t('platformSubtitle')}</p>
 
         <form onSubmit={submit} noValidate className="mt-6 flex w-full max-w-sm flex-col gap-4 text-start">
           <Field label={t('identifier')}>
@@ -141,10 +145,8 @@ export function SignIn() {
           <p className="text-sm text-ink-muted">{t('demoHint', { password: DEMO_PASSWORD })}</p>
         </div>
         {users.isPending && [0, 1, 2].map((i) => <Skeleton key={i} className="h-14 rounded-[18px]" />)}
-        {groupDemoAccounts(users.data ?? []).map((group) => (
-          <section key={group.companyId ?? 'platform'} className="flex flex-col gap-2">
-            <h3 className="text-xs font-semibold tracking-wide text-ink-muted uppercase">{group.companyName ?? t('platform')}</h3>
-            {group.accounts.map((u) => {
+        <div className="flex flex-col gap-2">
+            {demoAccounts(users.data ?? []).map((u) => {
               const Icon = ICONS[u.role];
               return (
                 <button
@@ -170,8 +172,7 @@ export function SignIn() {
                 </button>
               );
             })}
-          </section>
-        ))}
+        </div>
         <Link href="/dev/kit" className="text-sm font-medium text-brand-deep underline-offset-4 hover:underline dark:text-brand">
           {t('kit')}
         </Link>

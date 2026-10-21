@@ -22,14 +22,17 @@ import { MonthPicker } from '@/components/ui/month-picker';
 import { Segmented } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCompany, useDashboard, useSession } from '@/data/hooks';
+import { useTenantPath } from '@/data/tenant';
 import { Link } from '@/i18n/navigation';
 
 const cornerLink =
   'grid size-10 shrink-0 place-items-center rounded-full bg-soft text-ink transition-colors outline-none hover:bg-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&_svg]:size-4 rtl:[&_svg]:-scale-x-100';
 
+/** A round arrow link to a manager section; href is the path inside the portal, such as '/app/payments'. */
 function CornerLink({ href, label }: { href: string; label: string }) {
+  const to = useTenantPath();
   return (
-    <Link href={href} aria-label={label} title={label} className={cornerLink}>
+    <Link href={to(href)} aria-label={label} title={label} className={cornerLink}>
       <ArrowUpRight aria-hidden />
     </Link>
   );
@@ -136,6 +139,7 @@ function TrendCard({ data }: { data: DashboardData }) {
 
 function OutstandingCard({ data }: { data: DashboardData }) {
   const t = useTranslations();
+  const to = useTenantPath();
   const money = useMoney();
   const openPayment = useOpenPayment();
   const series = data.summary.trend.map((p) => Math.max(p.expected - p.collected, 0));
@@ -154,7 +158,7 @@ function OutstandingCard({ data }: { data: DashboardData }) {
           {t('nav.logPayment')}
         </Button>
         <Link
-          href="/app/reminders"
+          href={to('/app/reminders')}
           className="inline-flex h-9 items-center gap-2 rounded-full bg-card px-3.5 text-[13px] font-medium whitespace-nowrap shadow-card transition-colors outline-none hover:bg-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&_svg]:size-4"
         >
           <MessageCircle aria-hidden />
@@ -295,6 +299,7 @@ function DashboardSkeleton() {
 
 export function Dashboard() {
   const t = useTranslations();
+  const to = useTenantPath();
   const session = useSession();
   const openPayment = useOpenPayment();
   const thisMonth = monthOf(todayInDubai());
@@ -332,7 +337,7 @@ export function Dashboard() {
           <EmptyRoad title={t('illustrations.emptyRoad')} />
           <h2 className="text-xl font-semibold">{t('dashboard.emptyTitle')}</h2>
           <p className="max-w-sm text-sm text-ink-muted">{t('dashboard.emptyBody')}</p>
-          <Link href="/app/passengers" className="mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-medium text-on-brand [&_svg]:size-4">
+          <Link href={to('/app/passengers')} className="mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-medium text-on-brand [&_svg]:size-4">
             <UserPlus aria-hidden />
             {t('nav.addPassenger')}
           </Link>

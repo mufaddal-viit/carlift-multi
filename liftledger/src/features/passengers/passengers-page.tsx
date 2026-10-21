@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePassengers } from '@/data/hooks';
+import { useTenantPath } from '@/data/tenant';
 import { Link } from '@/i18n/navigation';
 import type { Passenger } from '@/core/repo/types';
 
@@ -17,6 +18,7 @@ export function PassengersPage() {
   const t = useTranslations('passengers');
   const locale = useLocale();
   const passengers = usePassengers();
+  const to = useTenantPath();
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -92,7 +94,7 @@ export function PassengersPage() {
               key: 'name',
               header: t('name'),
               cell: (p) => (
-                <Link href={`/app/passengers/${p.id}`} className="text-brand hover:underline font-medium">
+                <Link href={to(`/app/passengers/${p.id}`)} className="text-brand hover:underline font-medium">
                   {p.name}
                 </Link>
               ),
