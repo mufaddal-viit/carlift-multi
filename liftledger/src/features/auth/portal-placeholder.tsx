@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
 import { signOut } from '@/data/session-client';
 import { useRouter } from '@/i18n/navigation';
 
-/** Temporary home for the portals that are built in later plans (driver, rider, platform admin). */
+/** Temporary home for the portals that are built in later plans (driver, passenger, platform admin). */
 export function PortalPlaceholder({ role, name }: { role: Role; name: string }) {
   const t = useTranslations();
   const router = useRouter();

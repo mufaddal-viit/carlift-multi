@@ -50,7 +50,7 @@ describe('login', () => {
     expect(repo.login('manager@palm.example', 'nope')).rejects.toThrow('invalid-credentials'));
   it('lists a manager for every company among the demo accounts', async () => {
     const managers = (await repo.demoUsers()).filter((u) => u.role === 'manager');
-    expect(managers.map((u) => u.companyName)).toEqual(['Al Majra Transport', 'Skyline Commute', 'Oasis Riders', 'Palm Shuttle']);
+    expect(managers.map((u) => u.companyName)).toEqual(['Al Majra Transport', 'Skyline Commute', 'Oasis Commute', 'Palm Shuttle']);
   });
   it('rejects a wrong password', () =>
     expect(repo.login('manager@almajra.ae', 'nope')).rejects.toThrow('invalid-credentials'));
@@ -64,7 +64,7 @@ describe('login', () => {
 });
 
 describe('payments', () => {
-  it('logging the balance turns an overdue rider paid', async () => {
+  it('logging the balance turns an overdue passenger paid', async () => {
     const before = (await repo.statusBoard(manager, MONTH)).find((r) => r.ledger.status === 'overdue')!;
     await repo.logPayment(manager, {
       passengerId: before.passenger.id, amount: before.ledger.balance, date: TODAY, method: 'cash', forMonth: MONTH,
@@ -97,21 +97,21 @@ describe('payments', () => {
     await expect(repo.logPayment(manager, { passengerId: row.passenger.id, amount: 5, date: TODAY, method: 'cash', forMonth: 'Oct' }))
       .rejects.toThrow('invalid-input');
   });
-  it('a rider cannot log a payment', async () => {
-    const rider = await as('rider');
-    const me = (await repo.passengers(rider))[0];
-    await expect(repo.logPayment(rider, { passengerId: me.id, amount: 5, date: TODAY, method: 'cash', forMonth: MONTH }))
+  it('a passenger cannot log a payment', async () => {
+    const passenger = await as('passenger');
+    const me = (await repo.passengers(passenger))[0];
+    await expect(repo.logPayment(passenger, { passengerId: me.id, amount: 5, date: TODAY, method: 'cash', forMonth: MONTH }))
       .rejects.toThrow('forbidden');
   });
 });
 
 describe('scoping', () => {
-  it('hides a rider of another company behind not-found', async () => {
+  it('hides a passenger of another company behind not-found', async () => {
     const admin = await as('admin');
     const foreign = (await repo.passengers(admin)).find((p) => p.companyId !== DEMO_COMPANY_ID)!;
     await expect(repo.passenger(manager, foreign.id)).rejects.toThrow('not-found');
   });
-  it('hides a rider on another car from a driver', async () => {
+  it('hides a passenger on another car from a driver', async () => {
     const driver = await as('driver');
     const mine = new Set((await repo.passengers(driver)).map((p) => p.id));
     const other = (await repo.passengers(manager)).find((p) => !mine.has(p.id))!;
@@ -119,7 +119,7 @@ describe('scoping', () => {
     await expect(repo.logPayment(driver, { passengerId: other.id, amount: 5, date: TODAY, method: 'cash', forMonth: MONTH }))
       .rejects.toThrow('not-found');
   });
-  it('a driver only sees payments of their own riders', async () => {
+  it('a driver only sees payments of their own passengers', async () => {
     const driver = await as('driver');
     const mine = new Set((await repo.passengers(driver)).map((p) => p.id));
     const pays = await repo.payments(driver, MONTH);
@@ -129,7 +129,7 @@ describe('scoping', () => {
 });
 
 describe('trips', () => {
-  it('marking the same day twice keeps one trip per rider with the latest status', async () => {
+  it('marking the same day twice keeps one trip per passenger with the latest status', async () => {
     const id = (await repo.passengers(manager))[0].id;
     await repo.markTrips(manager, TODAY, [{ passengerId: id, status: 'travelled' }]);
     await repo.markTrips(manager, TODAY, [{ passengerId: id, status: 'absent' }]);
@@ -137,11 +137,11 @@ describe('trips', () => {
     expect(today).toHaveLength(1);
     expect(today[0].status).toBe('absent');
   });
-  it('marking a per-trip rider absent lowers what they owe by one trip', async () => {
+  it('marking a per-trip passenger absent lowers what they owe by one trip', async () => {
     const row = (await repo.statusBoard(manager, MONTH)).find((r) => r.passenger.billingType === 'perTrip' && r.ledger.expected > 0)!;
     const days = await Promise.all(['2026-10-01', '2026-10-02', '2026-10-05', '2026-10-06', '2026-10-07'].map((d) => repo.trips(manager, d)));
     const day = days.flat().find((t) => t.passengerId === row.passenger.id && t.status === 'travelled');
-    expect(day, 'seed has a travelled trip in early October for a per-trip rider').toBeTruthy();
+    expect(day, 'seed has a travelled trip in early October for a per-trip passenger').toBeTruthy();
     await repo.markTrips(manager, day!.date, [{ passengerId: row.passenger.id, status: 'absent' }]);
     const after = (await repo.statusBoard(manager, MONTH)).find((r) => r.passenger.id === row.passenger.id)!;
     expect(after.ledger.expected).toBe(row.ledger.expected - row.passenger.perTripFee);
@@ -149,16 +149,16 @@ describe('trips', () => {
 });
 
 describe('passengers', () => {
-  it('saves a new rider into the manager company with a derived route', async () => {
+  it('saves a new passenger into the manager company with a derived route', async () => {
     const car = (await repo.cars(manager))[0];
     const p = await repo.savePassenger(manager, {
-      carId: car.id, name: 'New Rider', employerName: 'Test Company', phone: '971501112233', pickupArea: 'Karama', dropArea: 'JLT', seatNumber: 9,
+      carId: car.id, name: 'New Passenger', employerName: 'Test Company', phone: '971501112233', pickupArea: 'Karama', dropArea: 'JLT', seatNumber: 9,
       billingType: 'monthly', monthlyFee: 300, perTripFee: 0, joinDate: TODAY,
     });
     expect(p).toMatchObject({ companyId: DEMO_COMPANY_ID, route: 'Karama → JLT', status: 'active' });
     expect((await repo.passengers(manager)).some((x) => x.id === p.id)).toBe(true);
   });
-  it('refuses to put a rider on a car from another company', async () => {
+  it('refuses to put a passenger on a car from another company', async () => {
     const admin = await as('admin');
     const foreignCar = (await repo.cars(admin)).find((c) => c.companyId !== DEMO_COMPANY_ID)!;
     await expect(repo.savePassenger(manager, {
@@ -166,7 +166,7 @@ describe('passengers', () => {
       billingType: 'monthly', monthlyFee: 300, perTripFee: 0, joinDate: TODAY,
     })).rejects.toThrow('not-found');
   });
-  it('deactivating removes the rider from the status board', async () => {
+  it('deactivating removes the passenger from the status board', async () => {
     const row = (await repo.statusBoard(manager, MONTH))[0];
     await repo.deactivatePassenger(manager, row.passenger.id);
     expect((await repo.statusBoard(manager, MONTH)).some((r) => r.passenger.id === row.passenger.id)).toBe(false);
@@ -220,17 +220,17 @@ describe('dashboard', () => {
     expect(d.summary.expected).toBe(board.reduce((s, r) => s + r.ledger.expected, 0));
     expect(d.summary.byCar.reduce((s, c) => s + c.collected, 0)).toBe(d.summary.collected);
   });
-  it('lists recent payments newest first with rider names', async () => {
+  it('lists recent payments newest first with passenger names', async () => {
     const d = await repo.dashboard(manager, MONTH);
     expect(d.recentPayments.length).toBeGreaterThan(0);
     expect(d.recentPayments.every((x) => x.passengerName.length > 0)).toBe(true);
     const dates = d.recentPayments.map((x) => x.date);
     expect([...dates].sort().reverse()).toEqual(dates);
   });
-  it('counts riders per car', async () => {
+  it('counts passengers per car', async () => {
     const d = await repo.dashboard(manager, MONTH);
     expect(d.cars).toHaveLength(3);
-    expect(d.cars.reduce((s, c) => s + c.riders, 0)).toBe(d.rows.length);
+    expect(d.cars.reduce((s, c) => s + c.passengers, 0)).toBe(d.rows.length);
     expect(d.cars.every((c) => c.driver !== null)).toBe(true);
   });
 });

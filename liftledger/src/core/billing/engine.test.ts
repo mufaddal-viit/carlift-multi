@@ -16,7 +16,7 @@ describe('expectedFor', () => {
     expect(expectedFor(pax({ joinDate: '2026-10-20' }), '2026-10', [])).toBe(135));
   it('is zero before the join month', () =>
     expect(expectedFor(pax({ joinDate: '2026-10-20' }), '2026-09', [])).toBe(0));
-  it('counts only travelled trips in the month for per-trip riders', () => {
+  it('counts only travelled trips in the month for per-trip passengers', () => {
     const p = pax({ billingType: 'perTrip', perTripFee: 25, monthlyFee: 0 });
     const trips = [trip('2026-10-01'), trip('2026-10-02'), trip('2026-10-03', 'absent'), trip('2026-09-30'),
       trip('2026-10-04', 'travelled', 'someone-else')];
@@ -51,19 +51,19 @@ describe('statusFor', () => {
   });
   it('advance for a future month does not count now', () =>
     expect(s([pay(350, '2026-11')], '2026-10-13').status).toBe('overdue'));
-  it('per-trip rider with zero trips has nothing due', () => {
+  it('per-trip passenger with zero trips has nothing due', () => {
     const l = s([], '2026-10-20', pax({ billingType: 'perTrip', perTripFee: 25 }));
     expect(l.status).toBe('paid');
     expect(l.nothingDue).toBe(true);
   });
-  it('per-trip rider is pending, not overdue, while the month is running', () => {
+  it('per-trip passenger is pending, not overdue, while the month is running', () => {
     const p = pax({ billingType: 'perTrip', perTripFee: 25 });
     expect(s([], '2026-10-20', p, [trip('2026-10-01')]).status).toBe('pending');
   });
-  it('per-trip rider is overdue once the month has ended', () => {
+  it('per-trip passenger is overdue once the month has ended', () => {
     const p = pax({ billingType: 'perTrip', perTripFee: 25 });
     expect(statusFor(p, '2026-10', [], [trip('2026-10-01')], '2026-11-01', 5).status).toBe('overdue');
   });
-  it('a month before the rider joined has nothing due', () =>
+  it('a month before the passenger joined has nothing due', () =>
     expect(statusFor(pax({ joinDate: '2026-10-20' }), '2026-09', [], [], '2026-10-25', 5).nothingDue).toBe(true));
 });

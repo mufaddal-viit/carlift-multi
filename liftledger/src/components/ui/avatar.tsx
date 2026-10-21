@@ -1,7 +1,7 @@
 import { initials } from '@/core/format';
 import { cn } from '@/lib/cn';
 
-// Soft, distinct tints so neighbouring avatars are easy to tell apart. Chosen by name, so a rider keeps their colour.
+// Soft, distinct tints so neighbouring avatars are easy to tell apart. Chosen by name, so a passenger keeps their colour.
 const TINTS = ['bg-paid-bg text-paid', 'bg-partial-bg text-partial', 'bg-pending-bg text-pending', 'bg-overdue-bg text-overdue', 'bg-brand-tint text-brand-deep'];
 const tintFor = (name: string) => TINTS[[...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % TINTS.length];
 

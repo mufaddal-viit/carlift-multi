@@ -10,7 +10,7 @@ const sessionOf = (role: Role, companyId: string | null = DEMO_COMPANY_ID): Sess
 };
 const manager = sessionOf('manager');
 const driver = sessionOf('driver');
-const rider = sessionOf('rider');
+const passenger = sessionOf('passenger');
 const admin = sessionOf('admin', null);
 const driverUser = db.users.find((u) => u.id === driver.userId)!;
 const myCar = db.cars.find((c) => c.driverId === driverUser.linkedDriverId)!;
@@ -18,19 +18,19 @@ const otherCar = db.cars.find((c) => c.companyId === DEMO_COMPANY_ID && c.id !==
 const otherCompany = db.companies.find((c) => c.id !== DEMO_COMPANY_ID)!.id;
 
 describe('visiblePassengers', () => {
-  it('a manager sees every rider of their company and nobody else', () => {
+  it('a manager sees every passenger of their company and nobody else', () => {
     const seen = visiblePassengers(manager, db);
     expect(seen).toHaveLength(db.passengers.filter((p) => p.companyId === DEMO_COMPANY_ID).length);
     expect(seen.every((p) => p.companyId === DEMO_COMPANY_ID)).toBe(true);
   });
-  it('a driver sees only riders on their own car', () => {
+  it('a driver sees only passengers on their own car', () => {
     const seen = visiblePassengers(driver, db);
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.every((p) => p.carId === myCar.id)).toBe(true);
   });
-  it('a rider sees only themselves', () => {
-    const u = db.users.find((x) => x.id === rider.userId)!;
-    expect(visiblePassengers(rider, db).map((p) => p.id)).toEqual([u.linkedPassengerId]);
+  it('a passenger sees only themselves', () => {
+    const u = db.users.find((x) => x.id === passenger.userId)!;
+    expect(visiblePassengers(passenger, db).map((p) => p.id)).toEqual([u.linkedPassengerId]);
   });
   it('the platform admin sees everyone', () => expect(visiblePassengers(admin, db)).toHaveLength(db.passengers.length));
   it('a session for an unknown user sees nobody', () =>
@@ -55,12 +55,12 @@ describe('canWrite', () => {
     expect(canWrite(driver, 'payment', own, db)).toBe(true);
     expect(canWrite(driver, 'trip', own, db)).toBe(true);
   });
-  it('a driver cannot touch another car, the fleet, or rider records', () => {
+  it('a driver cannot touch another car, the fleet, or passenger records', () => {
     expect(canWrite(driver, 'payment', { companyId: DEMO_COMPANY_ID, carId: otherCar.id }, db)).toBe(false);
     expect(canWrite(driver, 'fleet', own, db)).toBe(false);
     expect(canWrite(driver, 'passenger', own, db)).toBe(false);
   });
-  it('a rider can write nothing', () => {
-    for (const a of ['passenger', 'payment', 'trip', 'fleet'] as const) expect(canWrite(rider, a, own, db), a).toBe(false);
+  it('a passenger can write nothing', () => {
+    for (const a of ['passenger', 'payment', 'trip', 'fleet'] as const) expect(canWrite(passenger, a, own, db), a).toBe(false);
   });
 });

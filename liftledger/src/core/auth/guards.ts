@@ -1,10 +1,10 @@
 import type { Role, Session } from '../repo/types';
 
-const PORTALS: [prefix: string, role: Role][] = [['/admin', 'admin'], ['/app', 'manager'], ['/driver', 'driver'], ['/rider', 'rider']];
+const PORTALS: [prefix: string, role: Role][] = [['/admin', 'admin'], ['/app', 'manager'], ['/driver', 'driver'], ['/passenger', 'passenger']];
 const GUEST_ONLY = ['/login', '/signup'];
 const PUBLIC = ['/register'];
 
-export type Home = '/admin' | '/app' | '/driver' | '/rider';
+export type Home = '/admin' | '/app' | '/driver' | '/passenger';
 
 export const homeFor = (role: Role): Home => PORTALS.find(([, r]) => r === role)![0] as Home;
 

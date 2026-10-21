@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'manager' | 'driver' | 'rider';
+export type Role = 'admin' | 'manager' | 'driver' | 'passenger';
 export type PayMethod = 'cash' | 'transfer' | 'wallet';
 export type BillingType = 'monthly' | 'perTrip';
 export type Locale = 'en' | 'ar';
@@ -8,7 +8,7 @@ export interface Plan {
   name: string;
   priceAed: number;
   maxCars: number | null;
-  maxRiders: number | null;
+  maxPassengers: number | null;
   features: string[];
 }
 
@@ -131,7 +131,7 @@ export interface DashboardData {
   summary: import('../billing/summary').CompanySummary;
   rows: StatusRow[];
   recentPayments: (Payment & { passengerName: string })[];
-  cars: (Car & { driver: Driver | null; riders: number })[];
+  cars: (Car & { driver: Driver | null; passengers: number })[];
 }
 
 export type PassengerInput = Pick<

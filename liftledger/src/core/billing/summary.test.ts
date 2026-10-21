@@ -18,7 +18,7 @@ const run = (o: Partial<Parameters<typeof companySummary>[0]> = {}) =>
   companySummary({ month: '2026-10', passengers, payments, trips: [], today: '2026-10-13', dueDay: 5, ...o });
 
 describe('companySummary', () => {
-  it('totals expected, collected and outstanding over active riders only', () => {
+  it('totals expected, collected and outstanding over active passengers only', () => {
     const s = run();
     expect(s.expected).toBe(1200);
     expect(s.collected).toBe(450);
@@ -28,7 +28,7 @@ describe('companySummary', () => {
     const s = run();
     expect(s.collected + s.outstanding).toBe(s.expected);
   });
-  it('counts overdue riders', () => expect(run().overdueCount).toBe(2));
+  it('counts overdue passengers', () => expect(run().overdueCount).toBe(2));
   it('counts nobody as overdue before the due day', () => expect(run({ today: '2026-10-03' }).overdueCount).toBe(0));
   it('rounds the collection rate', () => expect(run().collectionRate).toBe(38));
   it('collection rate is 0 when nothing is expected', () => expect(run({ passengers: [] }).collectionRate).toBe(0));
@@ -39,8 +39,8 @@ describe('companySummary', () => {
   it('per-car totals add up to the company totals', () => {
     const s = run();
     expect(s.byCar).toEqual([
-      { carId: 'car1', riders: 2, expected: 700, collected: 450 },
-      { carId: 'car2', riders: 1, expected: 500, collected: 0 },
+      { carId: 'car1', passengers: 2, expected: 700, collected: 450 },
+      { carId: 'car2', passengers: 1, expected: 500, collected: 0 },
     ]);
   });
   it('per-method amounts add up to collected and always list all methods', () => {

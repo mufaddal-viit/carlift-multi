@@ -42,8 +42,8 @@ export function LogPaymentDialog({
   const board = useStatusBoard(thisMonth);
   const save = useLogPayment();
 
-  // Riders who owe the most come first: they are the likeliest to be paying.
-  const allRiders = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
+  // Passengers who owe the most come first: they are the likeliest to be paying.
+  const allPassengers = useMemo(() => [...(board.data ?? [])].sort((a, b) => b.ledger.balance - a.ledger.balance), [board.data]);
 
   const { register, handleSubmit, control, setValue, reset, formState, watch } = useForm<FormValues>({
     defaultValues: { passengerId: passengerId ?? '', search: '', amount: '', date: today, method: 'cash', forMonth: thisMonth, note: '' },
@@ -51,16 +51,16 @@ export function LogPaymentDialog({
   const { errors } = formState;
   const [chosenId, forMonth, searchQuery] = useWatch({ control, name: ['passengerId', 'forMonth', 'search'] });
 
-  // Filter riders by search query (name or employer name)
-  const riders = useMemo(() => {
+  // Filter passengers by search query (name or employer name)
+  const passengers = useMemo(() => {
     const query = (searchQuery ?? '').toLowerCase().trim();
     const filtered = query
-      ? allRiders.filter((r) => r.passenger.name.toLowerCase().includes(query) || r.passenger.employerName.toLowerCase().includes(query))
-      : allRiders;
+      ? allPassengers.filter((r) => r.passenger.name.toLowerCase().includes(query) || r.passenger.employerName.toLowerCase().includes(query))
+      : allPassengers;
     return filtered;
-  }, [allRiders, searchQuery]);
+  }, [allPassengers, searchQuery]);
 
-  const chosen = riders.find((r) => r.passenger.id === chosenId);
+  const chosen = passengers.find((r) => r.passenger.id === chosenId);
   const owes = chosen && forMonth === thisMonth && chosen.ledger.balance > 0 ? chosen.ledger.balance : 0;
 
   const close = (next: boolean) => {
@@ -69,7 +69,7 @@ export function LogPaymentDialog({
   };
 
   const submit = handleSubmit(async (v) => {
-    const name = riders.find((r) => r.passenger.id === v.passengerId)?.passenger.name ?? '';
+    const name = passengers.find((r) => r.passenger.id === v.passengerId)?.passenger.name ?? '';
     const amount = Number(v.amount);
     try {
       await save.mutateAsync({
@@ -87,31 +87,33 @@ export function LogPaymentDialog({
     <Dialog open={open} onOpenChange={close} title={t('payment.title')} description={t('payment.subtitle')}>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-[13px] font-medium text-ink-muted">{t('payment.rider')}</label>
+          <label htmlFor="payment-passenger" className="text-[13px] font-medium text-ink-muted">{t('payment.passenger')}</label>
           <Input
             type="search"
             placeholder={t('common.search')}
+            aria-label={t('common.search')}
             {...register('search')}
           />
           <Select
+            id="payment-passenger"
             {...register('passengerId', {
               required: true,
               onChange: (e) => {
-                const r = riders.find((x) => x.passenger.id === e.target.value);
+                const r = passengers.find((x) => x.passenger.id === e.target.value);
                 if (r && r.ledger.balance > 0) setValue('amount', String(r.ledger.balance), { shouldValidate: formState.isSubmitted });
               },
             })}
             aria-invalid={!!errors.passengerId}
           >
-            <option value="">{t('payment.chooseRider')}</option>
-            {riders.map((r) => (
+            <option value="">{t('payment.choosePassenger')}</option>
+            {passengers.map((r) => (
               <option key={r.passenger.id} value={r.passenger.id}>
                 {r.passenger.name} ({r.passenger.employerName})
                 {r.ledger.balance > 0 ? ` · ${t('dashboard.due', { amount: formatMoney(r.ledger.balance, locale) })}` : ''}
               </option>
             ))}
           </Select>
-          {errors.passengerId && <p className="text-xs text-overdue">{t('payment.errorRider')}</p>}
+          {errors.passengerId && <p className="text-xs text-overdue">{t('payment.errorPassenger')}</p>}
           {owes ? (
             <p className="text-xs text-ink-muted mt-1">{t('payment.balanceHint', { name: chosen!.passenger.name, amount: formatMoney(owes, locale) })}</p>
           ) : null}

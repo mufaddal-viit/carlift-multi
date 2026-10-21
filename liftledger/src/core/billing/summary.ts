@@ -8,7 +8,7 @@ export interface CompanySummary {
   outstanding: number;
   overdueCount: number;
   collectionRate: number;
-  byCar: { carId: string; riders: number; expected: number; collected: number }[];
+  byCar: { carId: string; passengers: number; expected: number; collected: number }[];
   byMethod: { method: PayMethod; amount: number }[];
   trend: { month: string; expected: number; collected: number }[];
 }
@@ -35,8 +35,8 @@ export function companySummary({ month, passengers, payments, trips, today, dueD
 
   const cars = new Map<string, CompanySummary['byCar'][number]>();
   for (const { p, l } of ledgers) {
-    const row = cars.get(p.carId) ?? { carId: p.carId, riders: 0, expected: 0, collected: 0 };
-    row.riders += 1;
+    const row = cars.get(p.carId) ?? { carId: p.carId, passengers: 0, expected: 0, collected: 0 };
+    row.passengers += 1;
     row.expected += l.expected;
     row.collected += l.paid;
     cars.set(p.carId, row);

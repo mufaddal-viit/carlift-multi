@@ -7,15 +7,15 @@ const as = (role: Role): Session => ({ userId: 'u', role, companyId: role === 'a
 describe('requiredRole', () => {
   it.each([
     ['/app', 'manager'], ['/app/payments', 'manager'], ['/driver', 'driver'], ['/driver/collect', 'driver'],
-    ['/rider/history', 'rider'], ['/admin/companies/1', 'admin'],
+    ['/passenger/history', 'passenger'], ['/admin/companies/1', 'admin'],
   ])('%s needs %s', (path, role) => expect(requiredRole(path)).toBe(role));
-  it.each([['/'], [''], ['/login'], ['/pricing'], ['/dev/kit'], ['/apple'], ['/administrator'], ['/riders']])(
+  it.each([['/'], [''], ['/login'], ['/pricing'], ['/dev/kit'], ['/apple'], ['/administrator'], ['/passengers']])(
     '%s is public', (path) => expect(requiredRole(path)).toBeNull());
 });
 
 describe('homeFor', () => {
   it('sends each role to its own portal', () => {
-    expect([homeFor('admin'), homeFor('manager'), homeFor('driver'), homeFor('rider')]).toEqual(['/admin', '/app', '/driver', '/rider']);
+    expect([homeFor('admin'), homeFor('manager'), homeFor('driver'), homeFor('passenger')]).toEqual(['/admin', '/app', '/driver', '/passenger']);
   });
 });
 
@@ -30,5 +30,5 @@ describe('decide', () => {
     for (const p of ['/', '/login', '/dev/kit']) expect(decide(p, null), p).toEqual({ allow: true });
   });
   it('sends a signed-in user from login to their portal', () =>
-    expect(decide('/login', as('rider'))).toEqual({ redirect: '/rider' }));
+    expect(decide('/login', as('passenger'))).toEqual({ redirect: '/passenger' }));
 });

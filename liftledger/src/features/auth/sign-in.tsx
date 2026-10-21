@@ -16,8 +16,8 @@ import { useDemoUsers } from '@/data/hooks';
 import { signIn, type SignInError } from '@/data/session-client';
 import { Link, useRouter } from '@/i18n/navigation';
 
-const ICONS: Record<Role, LucideIcon> = { admin: ShieldCheck, manager: Briefcase, driver: Bus, rider: User };
-const ORDER: Role[] = ['manager', 'driver', 'rider', 'admin'];
+const ICONS: Record<Role, LucideIcon> = { admin: ShieldCheck, manager: Briefcase, driver: Bus, passenger: User };
+const ORDER: Role[] = ['manager', 'driver', 'passenger', 'admin'];
 
 /** One account per role and company, grouped by company, the platform admin last. */
 function groupDemoAccounts(users: DemoUser[]) {

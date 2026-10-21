@@ -23,7 +23,7 @@ const isWorkingDay = (day: string) => {
   return dow >= 1 && dow <= 5;
 };
 
-/** How a rider behaves in the current month. */
+/** How a passenger behaves in the current month. */
 type Habit = 'full' | 'partial' | 'none' | 'advance' | 'late';
 
 interface Row {
@@ -70,15 +70,15 @@ const ROSTER: Row[] = [
 ];
 
 const PLANS: Plan[] = [
-  { id: 'plan-starter', name: 'Starter', priceAed: 99, maxCars: 2, maxRiders: 30, features: ['payments', 'attendance', 'reminders'] },
-  { id: 'plan-growth', name: 'Growth', priceAed: 249, maxCars: 8, maxRiders: 150, features: ['payments', 'attendance', 'reminders', 'driverApp', 'riderPortal'] },
-  { id: 'plan-fleet', name: 'Fleet', priceAed: 599, maxCars: null, maxRiders: null, features: ['payments', 'attendance', 'reminders', 'driverApp', 'riderPortal', 'prioritySupport'] },
+  { id: 'plan-starter', name: 'Starter', priceAed: 99, maxCars: 2, maxPassengers: 30, features: ['payments', 'attendance', 'reminders'] },
+  { id: 'plan-growth', name: 'Growth', priceAed: 249, maxCars: 8, maxPassengers: 150, features: ['payments', 'attendance', 'reminders', 'driverApp', 'passengerPortal'] },
+  { id: 'plan-fleet', name: 'Fleet', priceAed: 599, maxCars: null, maxPassengers: null, features: ['payments', 'attendance', 'reminders', 'driverApp', 'passengerPortal', 'prioritySupport'] },
 ];
 
-const OTHER_COMPANIES: { id: string; name: string; city: string; planId: string; status: Company['status']; cars: number; riders: number }[] = [
-  { id: 'co-skyline', name: 'Skyline Commute', city: 'Sharjah', planId: 'plan-fleet', status: 'active', cars: 2, riders: 7 },
-  { id: 'co-oasis', name: 'Oasis Riders', city: 'Abu Dhabi', planId: 'plan-starter', status: 'trial', cars: 1, riders: 4 },
-  { id: 'co-palm', name: 'Palm Shuttle', city: 'Ajman', planId: 'plan-starter', status: 'suspended', cars: 1, riders: 5 },
+const OTHER_COMPANIES: { id: string; name: string; city: string; planId: string; status: Company['status']; cars: number; passengers: number }[] = [
+  { id: 'co-skyline', name: 'Skyline Commute', city: 'Sharjah', planId: 'plan-fleet', status: 'active', cars: 2, passengers: 7 },
+  { id: 'co-oasis', name: 'Oasis Commute', city: 'Abu Dhabi', planId: 'plan-starter', status: 'trial', cars: 1, passengers: 4 },
+  { id: 'co-palm', name: 'Palm Shuttle', city: 'Ajman', planId: 'plan-starter', status: 'suspended', cars: 1, passengers: 5 },
 ];
 
 const FIRST = ['Adel', 'Bushra', 'Chetan', 'Dina', 'Ehsan', 'Farah', 'Gaurav', 'Hala', 'Ishaan', 'Joud', 'Karim', 'Layla'];
@@ -163,10 +163,10 @@ export function buildSeed(today: string): Db {
     });
   });
 
-  const riderUsers: [number, string, 'en' | 'ar'][] = [[0, 'priya@example.com', 'en'], [2, 'ayesha@example.com', 'en'], [12, 'hessa@example.com', 'ar']];
-  for (const [idx, email, locale] of riderUsers) {
+  const passengerUsers: [number, string, 'en' | 'ar'][] = [[0, 'priya@example.com', 'en'], [2, 'ayesha@example.com', 'en'], [12, 'hessa@example.com', 'ar']];
+  for (const [idx, email, locale] of passengerUsers) {
     const p = passengers[idx];
-    users.push({ id: `u-rider-majra-${idx + 1}`, companyId: DEMO_COMPANY_ID, role: 'rider', name: p.name, email, phone: p.phone, password: DEMO_PASSWORD, locale, linkedPassengerId: p.id });
+    users.push({ id: `u-passenger-majra-${idx + 1}`, companyId: DEMO_COMPANY_ID, role: 'passenger', name: p.name, email, phone: p.phone, password: DEMO_PASSWORD, locale, linkedPassengerId: p.id });
   }
 
   const firstMonth = addMonths(month, -5);
@@ -188,7 +188,7 @@ export function buildSeed(today: string): Db {
     for (let m = firstMonth; m < month; m = addMonths(m, 1)) {
       if (r.inactive && m === lastMonth) continue;
       const expected = expectedFor(p, m, trips);
-      // Most months are paid in full; now and then a rider settles only part, which gives the history some texture.
+      // Most months are paid in full; now and then a passenger settles only part, which gives the history some texture.
       const short = (r.habit === 'late' && m === lastMonth) || (!r.perTrip && rnd() < 0.14);
       const amount = short ? Math.round(expected / 100) * 50 : expected;
       addPayment(p, amount, `${m}-${pad(1 + Math.floor(rnd() * 6))}`, m, by);
@@ -222,7 +222,7 @@ export function buildSeed(today: string): Db {
       drivers.push({ id: `drv-${short}-${n}`, companyId: c.id, name: `${pick(FIRST)} ${pick(LAST)}`, phone: `9715040${ci}00${n}0`, status: 'active' });
       cars.push({ id: `car-${short}-${n}`, companyId: c.id, model: n % 2 ? 'Toyota Hiace' : 'Nissan Urvan', plate: `${'STU'[ci]} ${20000 + ci * 4111 + n * 97}`, capacity: 14, driverId: `drv-${short}-${n}`, status: 'active', photoKey: n % 2 ? 'hiace' : 'urvan' });
     }
-    for (let n = 1; n <= c.riders; n++) {
+    for (let n = 1; n <= c.passengers; n++) {
       const pickup = pick(AREAS);
       const drop = pick(AREAS.filter((a) => a !== pickup));
       const joinDate = `${addMonths(month, -(1 + (n % 3)))}-${pad(1 + ((n * 5) % 27))}`;

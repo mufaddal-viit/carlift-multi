@@ -269,7 +269,7 @@ export function createMockRepository(opts: MockOptions = {}): Repository {
         cars: visibleCars(s, d).map((car) => ({
           ...car,
           driver: d.drivers.find((x) => x.id === car.driverId) ?? null,
-          riders: rows.filter((r) => r.passenger.carId === car.id).length,
+          passengers: rows.filter((r) => r.passenger.carId === car.id).length,
         })),
       };
     },

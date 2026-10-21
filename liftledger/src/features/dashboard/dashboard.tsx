@@ -88,7 +88,7 @@ function ExpectedCard({ data }: { data: DashboardData }) {
           </Badge>
         )}
       </div>
-      <p className="mt-1 text-xs text-ink-muted">{t('riders', { count: data.rows.length })}</p>
+      <p className="mt-1 text-xs text-ink-muted">{t('passengers', { count: data.rows.length })}</p>
     </Card>
   );
 }
@@ -179,7 +179,7 @@ function OverdueCard({ data }: { data: DashboardData }) {
           <CountUp value={amount} format={money} />
         </p>
         <Badge tone={overdue.length ? 'overdue' : 'paid'} dot>
-          {overdue.length ? t('dashboard.overdueRiders', { count: overdue.length }) : t('dashboard.allClear')}
+          {overdue.length ? t('dashboard.overduePassengers', { count: overdue.length }) : t('dashboard.allClear')}
         </Badge>
       </div>
       <div className="mt-5 flex-1 rounded-[22px] bg-soft p-4">
@@ -221,7 +221,7 @@ function RecentPaymentsCard({ data }: { data: DashboardData }) {
   const money = useMoney();
   const columns: Column<PaymentRow>[] = [
     {
-      key: 'rider', header: t('dashboard.rider'), primary: true,
+      key: 'passenger', header: t('dashboard.passenger'), primary: true,
       cell: (p) => (
         <span className="flex items-center gap-3">
           <Avatar name={p.passengerName} size="sm" />
@@ -253,9 +253,9 @@ function OccupancyCard({ data }: { data: DashboardData }) {
       <SplitBars
         items={data.cars.map((c) => ({
           label: `${c.plate} · ${c.driver?.name ?? c.model}`,
-          value: c.riders,
+          value: c.passengers,
           of: c.capacity,
-          detail: t('seats', { filled: c.riders, total: c.capacity }),
+          detail: t('seats', { filled: c.passengers, total: c.capacity }),
         }))}
       />
     </Card>
@@ -268,7 +268,7 @@ function MethodSplitCard({ data }: { data: DashboardData }) {
   const tones = { cash: 'brand', transfer: 'deep', wallet: 'muted' } as const;
   return (
     <Card className="h-full">
-      <CardHeader icon={<CreditCard />} title={t('dashboard.howRidersPay')} subtitle={t('dashboard.howRidersPaySub')} />
+      <CardHeader icon={<CreditCard />} title={t('dashboard.howPassengersPay')} subtitle={t('dashboard.howPassengersPaySub')} />
       <SplitBars
         items={data.summary.byMethod.map((m) => ({
           label: t(`methods.${m.method}`),
@@ -334,7 +334,7 @@ export function Dashboard() {
           <p className="max-w-sm text-sm text-ink-muted">{t('dashboard.emptyBody')}</p>
           <Link href="/app/passengers" className="mt-2 inline-flex h-11 items-center gap-2 rounded-full bg-brand px-5 text-sm font-medium text-on-brand [&_svg]:size-4">
             <UserPlus aria-hidden />
-            {t('nav.addRider')}
+            {t('nav.addPassenger')}
           </Link>
         </Card>
       )}

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
-type Role = 'manager' | 'driver' | 'rider' | 'admin';
+type Role = 'manager' | 'driver' | 'passenger' | 'admin';
 
 /** Set LL_SHOTS to a folder to keep screenshots of the main screens for visual review. */
 const shots = process.env.LL_SHOTS;
@@ -10,13 +10,13 @@ const shot = async (page: Page, name: string) => {
 };
 
 /** The Al Majra demo account for each role (the platform admin has no company). */
-const DEMO_ACCOUNT: Record<Role, string> = { manager: 'u-mgr-majra', driver: 'u-drv-majra-1', rider: 'u-rider-majra-1', admin: 'u-admin' };
+const DEMO_ACCOUNT: Record<Role, string> = { manager: 'u-mgr-majra', driver: 'u-drv-majra-1', passenger: 'u-passenger-majra-1', admin: 'u-admin' };
 
 async function signIn(page: Page, role: Role, locale: 'en' | 'ar' = 'en') {
   await page.goto(`/${locale}/login`);
   await page.getByTestId(`demo-${DEMO_ACCOUNT[role]}`).click();
   await page.getByTestId('login-submit').click();
-  await page.waitForURL(new RegExp(`/${locale}/(app|driver|rider|admin)$`));
+  await page.waitForURL(new RegExp(`/${locale}/(app|driver|passenger|admin)$`));
 }
 
 async function signInWith(page: Page, identifier: string, password: string) {
@@ -101,8 +101,8 @@ test('logging a payment raises the collected total by exactly that amount', asyn
 
   await page.getByRole('main').getByRole('button', { name: 'Log payment' }).first().click();
   const dialog = page.getByRole('dialog');
-  // Riders who owe the most are listed first, and choosing one fills in what they owe.
-  await dialog.getByLabel('Rider').selectOption({ index: 1 });
+  // Passengers who owe the most are listed first, and choosing one fills in what they owe.
+  await dialog.getByLabel('Passenger', { exact: true }).selectOption({ index: 1 });
   const amount = Number(await dialog.getByLabel('Amount (AED)').inputValue());
   expect(amount).toBeGreaterThan(0);
   await shot(page, 'log-payment');
@@ -129,10 +129,10 @@ test('a driver cannot open the manager portal', async ({ page }) => {
 });
 
 test('signing out returns to login and locks the portal again', async ({ page }) => {
-  await signIn(page, 'rider');
+  await signIn(page, 'passenger');
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/en\/login$/);
-  await page.goto('/en/rider');
+  await page.goto('/en/passenger');
   await expect(page).toHaveURL(/\/en\/login$/);
 });
 

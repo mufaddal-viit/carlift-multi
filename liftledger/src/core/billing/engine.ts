@@ -41,7 +41,7 @@ export function statusFor(
   const balance = expected - paid;
   if (expected === 0) return { expected, paid, balance, status: 'paid', nothingDue: true };
   if (balance <= 0) return { expected, paid, balance, status: 'paid', nothingDue: false };
-  // Per-trip riders are billed on what they travelled, so they are only late once the month is over.
+  // Per-trip passengers are billed on what they travelled, so they are only late once the month is over.
   const due = p.billingType === 'perTrip' ? lastDay(month) : dueDate(month, dueDay);
   const status: PayStatus = today > due ? 'overdue' : paid === 0 ? 'pending' : 'partial';
   return { expected, paid, balance, status, nothingDue: false };

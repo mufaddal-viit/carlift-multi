@@ -28,7 +28,7 @@ const NAV: { key: NavKey; href: string; icon: LucideIcon }[] = [
 const isActive = (pathname: string, href: string) => (href === '/app' ? pathname === '/app' : pathname.startsWith(href));
 
 const PaymentDialogContext = createContext<(passengerId?: string) => void>(() => {});
-/** Opens the "log a payment" dialog from anywhere in the manager portal, optionally for one rider. */
+/** Opens the "log a payment" dialog from anywhere in the manager portal, optionally for one passenger. */
 export const useOpenPayment = () => useContext(PaymentDialogContext);
 
 function TopBar() {
@@ -143,7 +143,7 @@ function IconRail({ onLogPayment }: { onLogPayment: () => void }) {
           >
             <Plus className="size-5" aria-hidden />
           </button>
-          <RailLink href="/app/passengers" label={t('addRider')} icon={UserPlus} />
+          <RailLink href="/app/passengers" label={t('addPassenger')} icon={UserPlus} />
           <RailLink href="/app/attendance" label={t('attendance')} icon={CalendarCheck} active={isActive(pathname, '/app/attendance')} />
         </div>
         <div className={capsule}>

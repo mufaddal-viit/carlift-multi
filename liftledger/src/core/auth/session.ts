@@ -4,7 +4,7 @@ export const SESSION_COOKIE = 'll_session';
 /** A week, in seconds. */
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
-const ROLES = ['admin', 'manager', 'driver', 'rider'];
+const ROLES = ['admin', 'manager', 'driver', 'passenger'];
 const LOCALES = ['en', 'ar'];
 
 /** A session from untrusted JSON, or null when any field is missing or wrong. */

@@ -30,7 +30,7 @@
     "settings": "الإعدادات",
     "quickActions": "إجراءات سريعة",
     "logPayment": "تسجيل دفعة",
-    "addRider": "إضافة راكب",
+    "addPassenger": "إضافة راكب",
     "comingSoon": "هذا القسم قادم في الإصدار التالي."
   },
   "status": {
@@ -53,7 +53,7 @@
     "collectionRate": "نسبة التحصيل",
     "expected": "المتوقع",
     "expectedSub": "إجمالي فواتير هذا الشهر",
-    "riders": "{count} راكباً نشطاً",
+    "passengers": "{count} راكباً نشطاً",
     "trend": "اتجاه التحصيل",
     "trendSub": "آخر ستة أشهر",
     "trendAmount": "المبلغ",
@@ -64,14 +64,14 @@
     "remindAll": "تذكير الجميع",
     "overdue": "المتأخرات",
     "overdueSub": "تجاوزت تاريخ الاستحقاق",
-    "overdueRiders": "{count} ركاب",
+    "overduePassengers": "{count} ركاب",
     "allClear": "لا يوجد متأخرون",
     "needsAttention": "يحتاج إلى متابعة",
     "needsAttentionSub": "الركاب المتأخرون وأصحاب الدفعات الجزئية",
     "recentPayments": "أحدث المدفوعات",
     "recentPaymentsSub": "آخر المبالغ المستلمة",
     "noPayments": "لم تُسجَّل أي دفعات بعد.",
-    "rider": "الراكب",
+    "passenger": "الراكب",
     "date": "التاريخ",
     "method": "الطريقة",
     "forMonth": "عن شهر",
@@ -79,8 +79,8 @@
     "occupancy": "إشغال الأسطول",
     "occupancySub": "المقاعد المشغولة في كل مركبة",
     "seats": "{filled} من {total} مقعداً",
-    "howRidersPay": "طرق الدفع",
-    "howRidersPaySub": "حصة كل طريقة من مدفوعات هذا الشهر",
+    "howPassengersPay": "طرق الدفع",
+    "howPassengersPaySub": "حصة كل طريقة من مدفوعات هذا الشهر",
     "emptyTitle": "الطريق خالٍ أمامك",
     "emptyBody": "أضف أول راكب لتبدأ متابعة المدفوعات والحضور.",
     "due": "{amount} مستحقة"
@@ -88,8 +88,8 @@
   "payment": {
     "title": "تسجيل دفعة",
     "subtitle": "مبلغ استلمته من أحد الركاب.",
-    "rider": "الراكب",
-    "chooseRider": "اختر راكباً",
+    "passenger": "الراكب",
+    "choosePassenger": "اختر راكباً",
     "amount": "المبلغ (درهم)",
     "date": "تاريخ الاستلام",
     "method": "الطريقة",
@@ -99,7 +99,7 @@
     "submit": "حفظ الدفعة",
     "saved": "تم تسجيل دفعة بقيمة {amount} باسم {name}",
     "failed": "تعذّر حفظ الدفعة. حاول مرة أخرى.",
-    "errorRider": "اختر من قام بالدفع.",
+    "errorPassenger": "اختر من قام بالدفع.",
     "errorAmount": "أدخل مبلغاً صحيحاً أكبر من صفر.",
     "errorDate": "اختر تاريخ استلام المبلغ.",
     "balanceHint": "على {name} مبلغ {amount} عن هذا الشهر."
@@ -128,7 +128,7 @@
       "admin": "مدير المنصة",
       "manager": "مدير الشركة",
       "driver": "سائق",
-      "rider": "راكب"
+      "passenger": "راكب"
     }
   },
   "kit": {
