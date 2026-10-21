@@ -8,7 +8,7 @@ import { createTestDatabase } from './test-db';
 
 /**
  * The tenancy guarantee: acting as one company, nothing of another company can be read, counted, changed or
- * removed, whatever ids are passed in. Company A is Skyline Commute; company B is Al Majra Transport.
+ * removed, whatever ids are passed in. Company A is Skyline Commute; company B is Amad Express.
  */
 
 const TODAY = '2026-10-13';
@@ -80,7 +80,7 @@ describe('the repository, acting as company A', () => {
   });
 
   it('cannot use a session that claims company B while naming a company A user', () =>
-    expect(repo.passengers({ ...managerA, companyId: B, companySlug: 'al-majra-transport' })).rejects.toThrow('forbidden'));
+    expect(repo.passengers({ ...managerA, companyId: B, companySlug: 'amad-express' })).rejects.toThrow('forbidden'));
 
   it('can register the same phone number as a company B passenger, since phones are unique per company', async () => {
     const phoneInB = (await client.passenger.findUniqueOrThrow({ where: { id: ids.passenger } })).phone;

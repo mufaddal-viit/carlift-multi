@@ -1,6 +1,8 @@
 import type { Session } from '../repo/types';
 
-export const SESSION_COOKIE = 'll_session';
+// Renamed from ll_session when companies moved to new addresses, so week-old cookies naming an old address
+// cannot send anyone to a page that no longer exists; everyone signs in once more.
+export const SESSION_COOKIE = 'liftledger_session';
 /** A week, in seconds. */
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 

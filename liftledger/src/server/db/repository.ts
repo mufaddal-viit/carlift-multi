@@ -410,6 +410,11 @@ export function createDbRepository(client: PrismaClient, opts: DbRepositoryOptio
       return c ? toPublic(c) : null;
     },
 
+    async currentSlugFor(oldSlug) {
+      const c = await client.company.findFirst({ where: { previousSlugs: { has: oldSlug } }, select: { slug: true } });
+      return c?.slug ?? null;
+    },
+
     async companyBySlug(slug) {
       const c = await client.company.findUnique({ where: { slug } });
       return c ? toPublic(c) : null;

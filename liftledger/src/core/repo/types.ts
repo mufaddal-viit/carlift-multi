@@ -197,6 +197,8 @@ export interface Repository {
   companyById(companyId: string): Promise<PublicCompany | null>;
   /** Public: the company at an address, or null when there is none. */
   companyBySlug(slug: string): Promise<PublicCompany | null>;
+  /** Server only: the current address of a company that used to be at `slug`, or null. */
+  currentSlugFor(oldSlug: string): Promise<string | null>;
   /** Public: self-register a passenger from QR/link (no auth required). */
   registerPassenger(companyId: string, input: RegistrationInput): Promise<Passenger>;
 }

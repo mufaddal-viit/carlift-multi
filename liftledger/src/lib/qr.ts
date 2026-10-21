@@ -12,7 +12,7 @@ export function generateQRSVG(text: string, size: number = 200): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}`;
 }
 
-/** The public registration address of a company, e.g. https://liftledger-chi.vercel.app/en/al-majra-transport/register. */
+/** The public registration address of a company, e.g. https://liftledger-chi.vercel.app/en/amad-express/register. */
 export function generateRegistrationLink(locale: string, companySlug: string, baseUrl: string): string {
   return `${baseUrl}/${locale}/${companySlug}/register`;
 }

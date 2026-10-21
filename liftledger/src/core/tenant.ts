@@ -1,5 +1,5 @@
 /** The company that the bare /login address opens while the product serves a single operator. */
-export const DEFAULT_COMPANY_SLUG = 'al-majra-transport';
+export const DEFAULT_COMPANY_SLUG = 'amad-express';
 
 /** First path segments the app owns. A company slug can never be one of these, or its pages would be unreachable. */
 export const RESERVED_SLUGS = new Set([
@@ -8,7 +8,7 @@ export const RESERVED_SLUGS = new Set([
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** A URL-safe company slug from its name: "Al Majra Transport" becomes "al-majra-transport". */
+/** A URL-safe company slug from its name: "Amad Express" becomes "amad-express". */
 export function slugify(name: string): string {
   return name
     .normalize('NFKD')

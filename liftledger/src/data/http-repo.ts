@@ -28,6 +28,7 @@ export function createHttpRepository(): Repository {
     demoUsers: (companySlug) => call('demoUsers', [companySlug]),
     companyById: (companyId) => call('companyById', [companyId]),
     companyBySlug: (slug) => call('companyBySlug', [slug]),
+    currentSlugFor: () => Promise.reject(new Error('Only available on the server')),
     registerPassenger: (companyId, input) => call('registerPassenger', [companyId, input]),
     company: () => call('company', []),
     cars: () => call('cars', []),

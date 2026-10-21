@@ -9,19 +9,19 @@ const shot = async (page: Page, name: string) => {
   if (shots) await page.screenshot({ path: path.join(shots, `${test.info().project.name}-${name}.jpg`), fullPage: true, type: 'jpeg', quality: 80 });
 };
 
-const MAJRA = 'al-majra-transport';
+const AMAD = 'amad-express';
 
-/** The Al Majra demo account for each role (the platform admin has no company and signs in at /admin/login). */
+/** The Amad Express demo account for each role (the platform admin has no company and signs in at /admin/login). */
 const DEMO_ACCOUNT: Record<Role, string> = { manager: 'u-mgr-majra', driver: 'u-drv-majra-1', passenger: 'u-passenger-majra-1', admin: 'u-admin' };
 
 async function signIn(page: Page, role: Role, locale: 'en' | 'ar' = 'en') {
-  await page.goto(role === 'admin' ? `/${locale}/admin/login` : `/${locale}/${MAJRA}/login`);
+  await page.goto(role === 'admin' ? `/${locale}/admin/login` : `/${locale}/${AMAD}/login`);
   await page.getByTestId(`demo-${DEMO_ACCOUNT[role]}`).click();
   await page.getByTestId('login-submit').click();
-  await page.waitForURL(new RegExp(`/${locale}/(${MAJRA}/(app|driver|passenger)|admin)$`));
+  await page.waitForURL(new RegExp(`/${locale}/(${AMAD}/(app|driver|passenger)|admin)$`));
 }
 
-async function signInWith(page: Page, identifier: string, password: string, company = MAJRA) {
+async function signInWith(page: Page, identifier: string, password: string, company = AMAD) {
   await page.goto(`/en/${company}/login`);
   await page.getByTestId('login-identifier').fill(identifier);
   await page.getByTestId('login-password').fill(password);
@@ -42,20 +42,20 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('a visitor who is not signed in is sent to the company login', async ({ page }) => {
-  await page.goto(`/en/${MAJRA}/app`);
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
+  await page.goto(`/en/${AMAD}/app`);
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
 });
 
-test('the bare address and the old login lead to the Al Majra login', async ({ page }) => {
+test('the bare address and the old login lead to the Amad Express login', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
-  await expect(page.getByTestId('login-company')).toHaveText('Al Majra Transport');
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
+  await expect(page.getByTestId('login-company')).toHaveText('Amad Express');
   await page.goto('/en/login');
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
 });
 
 test('the login page shows only this company and its own accounts', async ({ page }) => {
-  await page.goto(`/en/${MAJRA}/login`);
+  await page.goto(`/en/${AMAD}/login`);
   await expect(page.getByTestId(`demo-${DEMO_ACCOUNT.manager}`)).toBeVisible();
   await expect(page.getByText('Skyline Commute')).toHaveCount(0);
   await expect(page.getByTestId(`demo-${DEMO_ACCOUNT.admin}`)).toHaveCount(0);
@@ -68,18 +68,18 @@ test('an unknown company address is not found', async ({ page }) => {
 
 test('old registration links forward to the company address', async ({ page }) => {
   await page.goto('/en/register/co-majra');
-  await expect(page).toHaveURL(`/en/${MAJRA}/register`);
-  await expect(page.getByTestId('register-company')).toHaveText('Al Majra Transport');
+  await expect(page).toHaveURL(`/en/${AMAD}/register`);
+  await expect(page.getByTestId('register-company')).toHaveText('Amad Express');
 });
 
 test('signing in needs the right password', async ({ page }) => {
-  await signInWith(page, 'manager@almajra.ae', 'wrong-password');
+  await signInWith(page, 'manager@amadexpress.ae', 'wrong-password');
   await expect(page.getByTestId('login-error')).toHaveText('That email, mobile number or password is not right.');
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
 });
 
 test('an empty form says what is missing instead of submitting', async ({ page }) => {
-  await page.goto(`/en/${MAJRA}/login`);
+  await page.goto(`/en/${AMAD}/login`);
   await page.getByTestId('login-submit').click();
   await expect(page.getByTestId('login-error')).toHaveText('Enter your email or mobile number and your password.');
 });
@@ -94,9 +94,9 @@ test('each manager lands in their own company and cannot open another', async ({
   await page.waitForURL('/en/skyline-commute/app');
   await page.getByTestId('account-menu').click();
   await expect(page.getByRole('menu')).toContainText('Skyline Commute');
-  const cookie = (await page.context().cookies()).find((c) => c.name === 'll_session');
+  const cookie = (await page.context().cookies()).find((c) => c.name === 'liftledger_session');
   expect(cookie?.httpOnly).toBe(true);
-  await page.goto(`/en/${MAJRA}/app`);
+  await page.goto(`/en/${AMAD}/app`);
   await expect(page).toHaveURL('/en/skyline-commute/app');
 });
 
@@ -107,12 +107,12 @@ test('a suspended company cannot sign in', async ({ page }) => {
 
 test('a mobile number in local format signs in too', async ({ page }) => {
   await signInWith(page, '050 100 0001', 'demo1234');
-  await page.waitForURL(`/en/${MAJRA}/app`);
+  await page.waitForURL(`/en/${AMAD}/app`);
 });
 
 test('a hand-made session cookie does not open a portal', async ({ page, context, baseURL }) => {
   const forged = encodeURIComponent(JSON.stringify({ userId: 'u-admin', role: 'admin', companyId: null, name: 'Mallory', locale: 'en' }));
-  await context.addCookies([{ name: 'll_session', value: forged, url: baseURL! }]);
+  await context.addCookies([{ name: 'liftledger_session', value: forged, url: baseURL! }]);
   await page.goto('/en/admin');
   await expect(page).toHaveURL('/en/admin/login');
 });
@@ -154,19 +154,19 @@ test('the payment form explains what is wrong instead of saving bad input', asyn
 
 test('a driver cannot open the manager portal', async ({ page }) => {
   await signIn(page, 'driver');
-  await page.goto(`/en/${MAJRA}/app`);
-  await expect(page).toHaveURL(`/en/${MAJRA}/driver`);
+  await page.goto(`/en/${AMAD}/app`);
+  await expect(page).toHaveURL(`/en/${AMAD}/driver`);
   // Old addresses from before company URLs still land in the right place.
   await page.goto('/en/app');
-  await expect(page).toHaveURL(`/en/${MAJRA}/driver`);
+  await expect(page).toHaveURL(`/en/${AMAD}/driver`);
 });
 
 test('signing out returns to login and locks the portal again', async ({ page }) => {
   await signIn(page, 'passenger');
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
-  await page.goto(`/en/${MAJRA}/passenger`);
-  await expect(page).toHaveURL(`/en/${MAJRA}/login`);
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
+  await page.goto(`/en/${AMAD}/passenger`);
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
 });
 
 test('Arabic is right-to-left and translated', async ({ page }) => {
@@ -181,7 +181,7 @@ test('Arabic is right-to-left and translated', async ({ page }) => {
 test('the language switch keeps you on the same page', async ({ page }) => {
   await signIn(page, 'manager');
   await page.getByRole('button', { name: 'Switch language' }).click();
-  await expect(page).toHaveURL(`/ar/${MAJRA}/app`);
+  await expect(page).toHaveURL(`/ar/${AMAD}/app`);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 });
 
@@ -195,7 +195,7 @@ test('dark theme follows the device setting', async ({ page }) => {
 
 test('a section that is not built yet says so instead of breaking', async ({ page }) => {
   await signIn(page, 'manager');
-  await page.goto(`/en/${MAJRA}/app/payments`);
+  await page.goto(`/en/${AMAD}/app/payments`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Payments');
   await expect(page.getByText('arrives in the next build')).toBeVisible();
 });
@@ -225,7 +225,7 @@ const mover = () =>
 test('a manager moves a passenger to another car, and the change shows everywhere', async ({ page }) => {
   const { id, name } = mover();
   await signIn(page, 'manager');
-  await page.goto(`/en/${MAJRA}/app/passengers`);
+  await page.goto(`/en/${AMAD}/app/passengers`);
   await expect(page.getByTestId(`car-of-${id}`).filter({ visible: true })).toContainText('B 12345');
 
   await page.getByTestId(`assign-${id}`).filter({ visible: true }).click();
@@ -240,23 +240,23 @@ test('a manager moves a passenger to another car, and the change shows everywher
   await expect(page.getByTestId(`car-of-${id}`).filter({ visible: true })).toContainText('A 44821');
 
   // The statement shows the new car and the move in its history.
-  await page.goto(`/en/${MAJRA}/app/passengers/${id}`);
+  await page.goto(`/en/${AMAD}/app/passengers/${id}`);
   await expect(page.getByTestId('soa-car')).toContainText('A 44821');
   await expect(page.getByTestId('car-history')).toContainText('Moved from B 12345 to A 44821');
-  await expect(page.getByTestId('car-history')).toContainText('by Salim Al Majra');
+  await expect(page.getByTestId('car-history')).toContainText('by Amad');
 });
 
 test('a passenger taken out of their car is listed as waiting until given one', async ({ page }) => {
   const { other: id, otherName: name } = mover();
   await signIn(page, 'manager');
-  await page.goto(`/en/${MAJRA}/app/passengers/${id}`);
+  await page.goto(`/en/${AMAD}/app/passengers/${id}`);
   await page.getByTestId('soa-assign').click();
   const dialog = page.getByRole('dialog');
   await dialog.getByTestId('car-option-none').click();
   await dialog.getByTestId('assign-save').click();
   await expect(page.getByTestId('soa-car')).toHaveText('No car');
 
-  await page.goto(`/en/${MAJRA}/app/passengers`);
+  await page.goto(`/en/${AMAD}/app/passengers`);
   await page.getByRole('radio', { name: /Waiting for a car/ }).click();
   await expect(page.getByRole('link', { name }).filter({ visible: true })).toBeVisible();
   await page.getByTestId(`assign-${id}`).filter({ visible: true }).click();

@@ -17,9 +17,9 @@ Visit: http://localhost:3000
 All demo accounts use password: `demo1234`
 
 **Manager Portal:**
-- Email: `manager@almajra.ae`
+- Email: `manager@amadexpress.ae`
 - Phone: `+971 50 100 0001`
-- Company: Al Majra Transport
+- Company: Amad Express
 
 **Driver Portal:**
 - One driver per vehicle in demo data
@@ -151,7 +151,7 @@ docker push your-registry/liftledger:latest
 ## Testing the Demo
 
 ### 1. Manager Dashboard
-- Login as manager@almajra.ae
+- Login as manager@amadexpress.ae
 - See demo company with 24 passengers
 - 6 months of payment history
 - Collection rate charts and metrics

@@ -68,7 +68,7 @@ Password for all accounts: `demo1234`
 
 | Role | Email/Phone | Company |
 |------|------------|---------|
-| Manager | manager@almajra.ae | Al Majra Transport |
+| Manager | manager@amadexpress.ae | Amad Express |
 | Driver | One per vehicle | Auto-assigned |
 | Rider | Multiple accounts | Various |
 | Admin | admin@liftledger.app | (Platform level) |
@@ -406,7 +406,7 @@ The application is feature-complete for the foundation phase and ready to showca
 **To show the demo:**
 1. Run `npm run dev` in `liftledger/liftledger/`
 2. Visit http://localhost:3000
-3. Login with `manager@almajra.ae` / `demo1234`
+3. Login with `manager@amadexpress.ae` / `demo1234`
 4. Navigate to `/en/passengers` to see the new features
 5. Try registration at `/en/register/co-majra` (public QR link demo)
 

@@ -7,7 +7,7 @@ import { forCompany } from './tenant';
 import { createTestDatabase } from './test-db';
 
 const TODAY = '2026-10-13';
-const MAJRA = 'al-majra-transport';
+const AMAD = 'amad-express';
 
 let client: PrismaClient;
 let drop: () => Promise<void>;
@@ -20,7 +20,7 @@ const SMALL = 'car-majra-small';
 beforeAll(async () => {
   ({ client, drop } = await createTestDatabase(TODAY));
   repo = createDbRepository(client, { today: () => TODAY });
-  manager = await repo.login('manager@almajra.ae', DEMO_PASSWORD, MAJRA);
+  manager = await repo.login('manager@amadexpress.ae', DEMO_PASSWORD, AMAD);
   await forCompany(client, DEMO_COMPANY_ID).car.create({
     data: { id: SMALL, companyId: DEMO_COMPANY_ID, model: 'Toyota Previa', plate: 'Z 1', capacity: 2, status: 'active' },
   });
@@ -47,7 +47,7 @@ describe('assigning a car', () => {
     const moved = await repo.assignCar(manager, p.id, SMALL);
     expect(moved).toMatchObject({ carId: SMALL, seatNumber: 1 });
     const [last] = await repo.assignments(manager, p.id);
-    expect(last).toMatchObject({ fromCarId: from, toCarId: SMALL, byUserId: manager.userId, byName: 'Salim Al Majra' });
+    expect(last).toMatchObject({ fromCarId: from, toCarId: SMALL, byUserId: manager.userId, byName: 'Amad' });
   });
 
   it('shows the move everywhere: fleet seats, passenger record and dashboard', async () => {
@@ -110,10 +110,10 @@ describe('assigning a car', () => {
 
   it('refuses drivers and passengers', async () => {
     const [p] = await movable(1);
-    const users = await repo.demoUsers(MAJRA);
+    const users = await repo.demoUsers(AMAD);
     for (const role of ['driver', 'passenger'] as const) {
       const u = users.find((x) => x.role === role)!;
-      const s = await repo.login(u.email!, DEMO_PASSWORD, MAJRA);
+      const s = await repo.login(u.email!, DEMO_PASSWORD, AMAD);
       await expect(repo.assignCar(s, p.id, SMALL)).rejects.toThrow('forbidden');
     }
   });
@@ -121,7 +121,7 @@ describe('assigning a car', () => {
   it('starts every seeded passenger with the car they joined in', async () => {
     const [p] = await movable(1);
     const history = await repo.assignments(manager, p.id);
-    expect(history.at(-1)).toMatchObject({ fromCarId: null, byName: 'Salim Al Majra' });
+    expect(history.at(-1)).toMatchObject({ fromCarId: null, byName: 'Amad' });
   });
 });
 

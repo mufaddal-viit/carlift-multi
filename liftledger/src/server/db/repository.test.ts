@@ -7,17 +7,17 @@ import { createTestDatabase } from './test-db';
 
 const TODAY = '2026-10-13';
 const MONTH = '2026-10';
-const MAJRA = 'al-majra-transport';
+const AMAD = 'amad-express';
 
 let client: PrismaClient;
 let drop: () => Promise<void>;
 let repo: Repository;
 let manager: Session;
 
-/** Signs in as the first Al Majra demo account with that role, the way the login page does. */
+/** Signs in as the first Amad Express demo account with that role, the way the login page does. */
 const as = async (role: Exclude<Role, 'admin'>) => {
-  const u = (await repo.demoUsers(MAJRA)).find((x) => x.role === role)!;
-  return repo.login(u.email!, DEMO_PASSWORD, MAJRA);
+  const u = (await repo.demoUsers(AMAD)).find((x) => x.role === role)!;
+  return repo.login(u.email!, DEMO_PASSWORD, AMAD);
 };
 
 beforeAll(async () => {
@@ -30,23 +30,23 @@ afterAll(() => drop());
 
 describe('login', () => {
   it('accepts a seeded manager by email', async () =>
-    expect(await repo.login('manager@almajra.ae', DEMO_PASSWORD, MAJRA)).toMatchObject({
-      role: 'manager', companyId: DEMO_COMPANY_ID, companySlug: MAJRA,
+    expect(await repo.login('manager@amadexpress.ae', DEMO_PASSWORD, AMAD)).toMatchObject({
+      role: 'manager', companyId: DEMO_COMPANY_ID, companySlug: AMAD,
     }));
-  it('accepts an email in any case', async () => expect((await repo.login('Manager@AlMajra.ae', DEMO_PASSWORD, MAJRA)).role).toBe('manager'));
+  it('accepts an email in any case', async () => expect((await repo.login('Manager@AmadExpress.ae', DEMO_PASSWORD, AMAD)).role).toBe('manager'));
   it('accepts a phone number however it is spaced, and a local mobile number', async () => {
-    expect((await repo.login('+971 50 100 0001', DEMO_PASSWORD, MAJRA)).role).toBe('manager');
-    expect((await repo.login('050 100 0001', DEMO_PASSWORD, MAJRA)).role).toBe('manager');
+    expect((await repo.login('+971 50 100 0001', DEMO_PASSWORD, AMAD)).role).toBe('manager');
+    expect((await repo.login('050 100 0001', DEMO_PASSWORD, AMAD)).role).toBe('manager');
   });
   it('signs each manager into their own company', async () =>
     expect(await repo.login('manager@skyline.example', DEMO_PASSWORD, 'skyline-commute')).toMatchObject({
       companyId: 'co-skyline', companySlug: 'skyline-commute',
     }));
   it("refuses a user on another company's login page", () =>
-    expect(repo.login('manager@skyline.example', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials'));
+    expect(repo.login('manager@skyline.example', DEMO_PASSWORD, AMAD)).rejects.toThrow('invalid-credentials'));
   it('keeps the platform console and company logins apart', async () => {
-    await expect(repo.login('manager@almajra.ae', DEMO_PASSWORD, null)).rejects.toThrow('invalid-credentials');
-    await expect(repo.login('admin@liftledger.app', DEMO_PASSWORD, MAJRA)).rejects.toThrow('invalid-credentials');
+    await expect(repo.login('manager@amadexpress.ae', DEMO_PASSWORD, null)).rejects.toThrow('invalid-credentials');
+    await expect(repo.login('admin@liftledger.app', DEMO_PASSWORD, AMAD)).rejects.toThrow('invalid-credentials');
     expect(await repo.login('admin@liftledger.app', DEMO_PASSWORD, null)).toMatchObject({ role: 'admin', companyId: null, companySlug: null });
   });
   it('refuses users of a suspended company, but only once the password is right', async () => {
@@ -54,16 +54,16 @@ describe('login', () => {
     await expect(repo.login('manager@palm.example', 'nope', 'palm-shuttle')).rejects.toThrow('invalid-credentials');
   });
   it.each([
-    ['manager@almajra.ae', 'nope', MAJRA], ['nobody@example.com', DEMO_PASSWORD, MAJRA], ['', DEMO_PASSWORD, MAJRA],
-    ['manager@almajra.ae', DEMO_PASSWORD, 'no-such-company'],
+    ['manager@amadexpress.ae', 'nope', AMAD], ['nobody@example.com', DEMO_PASSWORD, AMAD], ['', DEMO_PASSWORD, AMAD],
+    ['manager@amadexpress.ae', DEMO_PASSWORD, 'no-such-company'],
   ])('rejects %s / %s at %s', (id, pw, slug) => expect(repo.login(id, pw, slug)).rejects.toThrow('invalid-credentials'));
   it('stores passwords hashed, never in plain text', async () => {
-    const u = await client.user.findFirst({ where: { email: 'manager@almajra.ae' } });
+    const u = await client.user.findFirst({ where: { email: 'manager@amadexpress.ae' } });
     expect(u?.passwordHash).toMatch(/^scrypt\$/);
-    expect(JSON.stringify(await repo.demoUsers(MAJRA))).not.toContain(DEMO_PASSWORD);
+    expect(JSON.stringify(await repo.demoUsers(AMAD))).not.toContain(DEMO_PASSWORD);
   });
   it('lists only that company’s demo accounts, or only the admin on the platform page', async () => {
-    const users = await repo.demoUsers(MAJRA);
+    const users = await repo.demoUsers(AMAD);
     expect(users.every((u) => u.companyId === DEMO_COMPANY_ID)).toBe(true);
     expect(new Set(users.map((u) => u.role))).toEqual(new Set(['manager', 'driver', 'passenger']));
     expect((await repo.demoUsers(null)).map((u) => u.role)).toEqual(['admin']);
@@ -81,13 +81,19 @@ describe('sessions are re-checked against the database', () => {
 
 describe('companies', () => {
   it('finds a company by address or id, with only public fields', async () => {
-    expect(await repo.companyBySlug(MAJRA)).toEqual({
-      id: DEMO_COMPANY_ID, slug: MAJRA, name: 'Al Majra Transport', phone: '97143001000', status: 'active',
+    expect(await repo.companyBySlug(AMAD)).toEqual({
+      id: DEMO_COMPANY_ID, slug: AMAD, name: 'Amad Express', phone: '97143001000', status: 'active',
     });
-    expect(await repo.companyById(DEMO_COMPANY_ID)).toMatchObject({ slug: MAJRA });
+    expect(await repo.companyById(DEMO_COMPANY_ID)).toMatchObject({ slug: AMAD });
     expect(await repo.companyBySlug('nope')).toBeNull();
   });
-  it('gives the manager their own company', async () => expect((await repo.company(manager)).name).toBe('Al Majra Transport'));
+  it('forwards an old company address to the current one', async () => {
+    await client.company.update({ where: { id: DEMO_COMPANY_ID }, data: { previousSlugs: ['al-majra-transport'] } });
+    expect(await repo.currentSlugFor('al-majra-transport')).toBe(AMAD);
+    expect(await repo.companyBySlug('al-majra-transport')).toBeNull();
+    expect(await repo.currentSlugFor('never-existed')).toBeNull();
+  });
+  it('gives the manager their own company', async () => expect((await repo.company(manager)).name).toBe('Amad Express'));
 });
 
 describe('payments', () => {

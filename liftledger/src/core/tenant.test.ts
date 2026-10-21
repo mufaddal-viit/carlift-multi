@@ -3,7 +3,7 @@ import { DEFAULT_COMPANY_SLUG, isValidSlug, slugify } from './tenant';
 
 describe('slugify', () => {
   it.each([
-    ['Al Majra Transport', 'al-majra-transport'],
+    ['Amad Express', 'amad-express'],
     ['  Skyline   Commute  ', 'skyline-commute'],
     ['Oasis & Sons L.L.C.', 'oasis-and-sons-l-l-c'],
     ['Café Rides', 'cafe-rides'],

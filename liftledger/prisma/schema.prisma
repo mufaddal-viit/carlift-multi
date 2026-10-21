@@ -76,7 +76,9 @@ model Plan {
 model Company {
   id           String        @id @default(cuid()) @map("_id")
   /// The company's address in URLs: /en/{slug}/login.
-  slug         String        @unique
+  slug          String        @unique
+  /// Addresses the company had before; links to them forward to the current one.
+  previousSlugs String[]      @default([])
   name         String
   tradeLicense String?
   city         String

@@ -16,7 +16,7 @@ export function useTenant(): PublicCompany {
   return company;
 }
 
-/** Turns a portal path into the company's address: '/app/payments' → '/al-majra-transport/app/payments'. */
+/** Turns a portal path into the company's address: '/app/payments' → '/amad-express/app/payments'. */
 export function useTenantPath(): (path: string) => string {
   const { slug } = useTenant();
   return useCallback((path: string) => `/${slug}${path === '/' ? '' : path}`, [slug]);

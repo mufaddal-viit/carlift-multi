@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { decide, homeFor, requiredRole } from './guards';
 import type { Role, Session } from '../repo/types';
 
-const SLUG = 'al-majra-transport';
+const SLUG = 'amad-express';
 
 const as = (role: Role, companySlug: string | null = role === 'admin' ? null : SLUG): Session => ({
   userId: 'u', role, companyId: companySlug ? 'c' : null, companySlug, name: 'N', locale: 'en',

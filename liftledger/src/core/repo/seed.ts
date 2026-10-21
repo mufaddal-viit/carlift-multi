@@ -129,18 +129,18 @@ export function buildSeed(today: string): Db {
 
   // ---- Main demo company -------------------------------------------------
   companies.push({
-    id: DEMO_COMPANY_ID, slug: 'al-majra-transport', name: 'Al Majra Transport', tradeLicense: 'CN-1048821', city: 'Dubai', phone: '97143001000',
+    id: DEMO_COMPANY_ID, slug: 'amad-express', name: 'Amad Express', tradeLicense: 'CN-1048821', city: 'Dubai', phone: '97143001000',
     planId: 'plan-growth', status: 'active', dueDay: 5, currency: 'AED', createdAt: `${addMonths(month, -14)}-01`,
   });
 
   const fleet = [
-    { n: 1, model: 'Toyota Hiace', plate: 'B 12345', capacity: 14, photoKey: 'hiace', driver: 'Rashid Khan', email: 'rashid@almajra.ae' },
-    { n: 2, model: 'Toyota Hiace', plate: 'D 67890', capacity: 14, photoKey: 'hiace', driver: 'Ahmed Noor', email: 'ahmed@almajra.ae' },
-    { n: 3, model: 'Nissan Urvan', plate: 'A 44821', capacity: 15, photoKey: 'urvan', driver: 'Bilal Hassan', email: 'bilal@almajra.ae' },
+    { n: 1, model: 'Toyota Hiace', plate: 'B 12345', capacity: 14, photoKey: 'hiace', driver: 'Rashid Khan', email: 'rashid@amadexpress.ae' },
+    { n: 2, model: 'Toyota Hiace', plate: 'D 67890', capacity: 14, photoKey: 'hiace', driver: 'Ahmed Noor', email: 'ahmed@amadexpress.ae' },
+    { n: 3, model: 'Nissan Urvan', plate: 'A 44821', capacity: 15, photoKey: 'urvan', driver: 'Bilal Hassan', email: 'bilal@amadexpress.ae' },
   ];
 
   users.push(
-    { id: 'u-mgr-majra', companyId: DEMO_COMPANY_ID, role: 'manager', name: 'Salim Al Majra', email: 'manager@almajra.ae', phone: '971501000001', password: DEMO_PASSWORD, locale: 'en' },
+    { id: 'u-mgr-majra', companyId: DEMO_COMPANY_ID, role: 'manager', name: 'Amad', email: 'manager@amadexpress.ae', phone: '971501000001', password: DEMO_PASSWORD, locale: 'en' },
   );
   for (const f of fleet) {
     drivers.push({ id: `drv-majra-${f.n}`, companyId: DEMO_COMPANY_ID, name: f.driver, phone: `97150200000${f.n}`, licenseNo: `DXB-${40000 + f.n * 317}`, status: 'active' });
