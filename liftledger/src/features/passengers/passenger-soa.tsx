@@ -9,10 +9,13 @@ import { todayInDubai } from '@/core/clock';
 import { PageHeader } from '@/components/shell/manager-shell';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
+import { EmptyRoad } from '@/components/illustrations';
+import { SystemPage } from '@/components/shell/system-page';
+import { useTenantPath } from '@/data/tenant';
 import type { Locale } from '@/core/repo/types';
 import { useAssignments, useFleet, usePassenger, usePassengerPayments } from '@/data/hooks';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { AssignCarDialog } from './assign-car-dialog';
 
 interface MonthRow {
@@ -73,9 +76,7 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
     return (
       <>
         <PageHeader title={t('title')} />
-        <Card className="py-8 text-center">
-          <p className="text-ink-muted">{t('profile')}: Not found</p>
-        </Card>
+        <PassengerNotFound />
       </>
     );
   }
@@ -212,5 +213,25 @@ export function PassengerSOA({ passengerId }: { passengerId: string }) {
         )}
       </Card>
     </>
+  );
+}
+
+/** A passenger that does not exist, or belongs to another company: the server answers both the same way. */
+function PassengerNotFound() {
+  const t = useTranslations('system');
+  const to = useTenantPath();
+  return (
+    <SystemPage
+      variant="inline"
+      testId="passenger-not-found"
+      title={t('passengerNotFound.title')}
+      body={t('passengerNotFound.body')}
+      illustration={<EmptyRoad title={t('passengerNotFound.title')} />}
+      actions={
+        <Link href={to('/app/passengers')} className={buttonClasses({ variant: 'primary' })}>
+          {t('passengerNotFound.back')}
+        </Link>
+      }
+    />
   );
 }

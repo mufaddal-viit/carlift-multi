@@ -61,9 +61,30 @@ test('the login page shows only this company and its own accounts', async ({ pag
   await expect(page.getByTestId(`demo-${DEMO_ACCOUNT.admin}`)).toHaveCount(0);
 });
 
-test('an unknown company address is not found', async ({ page }) => {
+test('an unknown company address is not found, with a way back', async ({ page }) => {
   const response = await page.goto('/en/no-such-company/login');
   expect(response?.status()).toBe(404);
+  await expect(page.getByTestId('page-not-found')).toContainText("We can't find that page");
+  await page.getByRole('link', { name: 'Go to the start page' }).click();
+  await expect(page).toHaveURL(`/en/${AMAD}/login`);
+});
+
+test('any unknown address gets the translated 404 page', async ({ page }) => {
+  for (const [path, text] of [['/en/a/b/c/d', "We can't find that page"], ['/ar/a/b/c/d', 'لم نعثر على هذه الصفحة']]) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(404);
+    await expect(page.getByTestId('page-not-found'), path).toContainText(text);
+    expect(await noSidewaysScroll(page)).toBe(true);
+  }
+  await shot(page, 'not-found-ar');
+});
+
+test("another company's passenger reads as not found, with a way back", async ({ page }) => {
+  await signIn(page, 'manager');
+  await page.goto(`/en/${AMAD}/app/passengers/pax-skyline-1`);
+  await expect(page.getByTestId('passenger-not-found')).toContainText('Passenger not found');
+  await page.getByRole('link', { name: 'Back to passengers' }).click();
+  await expect(page).toHaveURL(`/en/${AMAD}/app/passengers`);
 });
 
 test('old registration links forward to the company address', async ({ page }) => {
@@ -100,9 +121,13 @@ test('each manager lands in their own company and cannot open another', async ({
   await expect(page).toHaveURL('/en/skyline-commute/app');
 });
 
-test('a suspended company cannot sign in', async ({ page }) => {
-  await signInWith(page, 'manager@palm.example', 'demo1234', 'palm-shuttle');
-  await expect(page.getByTestId('login-error')).toContainText('suspended');
+test('a suspended company shows a clear notice instead of its sign-in and registration forms', async ({ page }) => {
+  for (const path of ['/en/palm-shuttle/login', '/en/palm-shuttle/register']) {
+    await page.goto(path);
+    await expect(page.getByTestId('company-unavailable'), path).toContainText('Palm Shuttle is not available right now');
+    await expect(page.getByRole('link', { name: 'Call Palm Shuttle' })).toHaveAttribute('href', /^tel:\+971/);
+    await expect(page.getByTestId('login-password')).toHaveCount(0);
+  }
 });
 
 test('a mobile number in local format signs in too', async ({ page }) => {
